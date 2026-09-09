@@ -819,16 +819,16 @@ function showUserSelection() {
       <span class="registered-user-info">
 
         <strong class="registered-user-name">
-          ${escapeHTML(
-            getParticipantFullName(user)
-          )}
+          ${escapeHtml(
+  getParticipantFullName(user)
+)}
         </strong>
 
         <small class="registered-user-license">
           License No.
-          ${escapeHTML(
-            maskLicense(user.licenseNo)
-          )}
+          ${escapeHtml(
+  maskLicense(user.licenseNo)
+)}
         </small>
 
       </span>
