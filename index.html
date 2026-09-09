@@ -1,456 +1,240 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <title>INSET 2026 Attendance</title>
-
-  <link
-    rel="stylesheet"
-    href="style.css"
-  >
-
-  <!-- QR SCANNER -->
-  <script
-    src="https://unpkg.com/html5-qrcode"
-    type="text/javascript"
-  ></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b2a5b">
+  <title>INSET 2026 Attendance System</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
 </head>
-
-
 <body>
 
-  <!-- HEADER -->
+  <div class="app-shell">
 
-  <header class="app-header">
-
-    <div class="header-title">
-      INSET 2026
-    </div>
-
-    <div class="header-subtitle">
-      ATTENDANCE SYSTEM
-    </div>
-
-  </header>
-
-
-  <!-- MAIN -->
-
-  <main class="container">
-
-
-    <!-- HOME -->
-
-    <section
-      id="homePage"
-      class="page active"
-    >
-
-      <div class="card home-card">
-
-        <h1>
-          INSET 2026
-        </h1>
-
-        <p>
-          Attendance Monitoring System
-        </p>
-
-        <button
-          class="primary-btn"
-          onclick="startAttendance()"
-        >
-          📷 SCAN QR CODE
-        </button>
-
-        <button
-          class="secondary-btn"
-          onclick="showAdminLogin()"
-        >
-          ⚙️ ADMIN
-        </button>
-
+    <header class="top-header">
+      <div class="brand-mark">INSET</div>
+      <div class="brand-text">
+        <div class="brand-title">INSET 2026</div>
+        <div class="brand-subtitle">Attendance System</div>
       </div>
+    </header>
 
-    </section>
+    <main class="app-main">
 
-
-    <!-- IDENTIFICATION -->
-
-    <section
-      id="identifyPage"
-      class="page"
-    >
-
-      <div class="card">
-
-        <h2>
-          Identify Participant
-        </h2>
-
-        <p>
-          Enter your PRC License No. to continue.
-        </p>
-
-        <form
-          onsubmit="identifyUser(event)"
-        >
-
-          <label>
-            PRC LICENSE NO.
-          </label>
-
-          <input
-            id="identifyLicense"
-            type="text"
-            placeholder="Enter PRC License No."
-            required
-            autocomplete="off"
-          >
-
-          <button
-            type="submit"
-            class="primary-btn"
-          >
-            CONTINUE
-          </button>
-
-        </form>
-
-        <button
-          class="link-btn"
-          onclick="showHome()"
-        >
-          ← Back
-        </button>
-
-      </div>
-
-    </section>
-
-
-    <!-- REGISTRATION -->
-
-    <section
-      id="registrationPage"
-      class="page"
-    >
-
-      <div class="card">
-
-        <h2>
-          Participant Registration
-        </h2>
-
-        <p>
-          First-time participants must register.
-        </p>
-
-
-        <form
-          onsubmit="registerUser(event)"
-        >
-
-          <label>
-            FIRST NAME
-          </label>
-
-          <input
-            id="firstName"
-            required
-          >
-
-
-          <label>
-            MIDDLE NAME
-          </label>
-
-          <input
-            id="middleName"
-          >
-
-
-          <label>
-            LAST NAME
-          </label>
-
-          <input
-            id="lastName"
-            required
-          >
-
-
-          <label>
-            LICENSE NO.
-          </label>
-
-          <input
-            id="registrationLicense"
-            required
-            autocomplete="off"
-          >
-
-
-          <button
-            type="submit"
-            class="primary-btn"
-          >
-            REGISTER
-          </button>
-
-        </form>
-
-      </div>
-
-    </section>
-
-
-    <!-- SCANNER -->
-
-    <section
-      id="scannerPage"
-      class="page"
-    >
-
-      <div class="card scanner-card">
-
-        <h2>
-          Scan Attendance QR
-        </h2>
-
-        <p id="scannerStatus">
-          Preparing camera...
-        </p>
-
-
-        <div
-          id="reader"
-          class="qr-reader"
-        ></div>
-
-
-        <button
-          class="secondary-btn"
-          onclick="stopScanner(); showHome();"
-        >
-          CANCEL
-        </button>
-
-      </div>
-
-    </section>
-
-
-    <!-- SUCCESS -->
-
-    <section
-      id="successPage"
-      class="page"
-    >
-
-      <div class="card success-card">
-
-        <div class="success-icon">
-          ✓
+      <!-- HOME -->
+      <section id="homePage" class="page active">
+        <div class="hero-card">
+          <div class="hero-icon">✓</div>
+          <div class="eyebrow">IN-SERVICE TRAINING</div>
+          <h1>INSET 2026</h1>
+          <p class="hero-title">Attendance System</p>
+          <p class="event-date">September 9–11, 2026</p>
+          <p class="hero-description">
+            Scan the official QR code to record your attendance.
+          </p>
         </div>
 
-        <h2>
-          Attendance Recorded
-        </h2>
+        <div class="action-stack">
+          <button class="action-button primary" type="button" onclick="startAttendance()">
+            <span class="button-icon">📷</span>
+            <span>
+              <strong>SCAN QR CODE</strong>
+              <small>Time-in / Time-out</small>
+            </span>
+          </button>
 
-        <div id="successDetails"></div>
+          <button class="action-button secondary" type="button" onclick="openRegistration()">
+            <span class="button-icon">📝</span>
+            <span>
+              <strong>REGISTER</strong>
+              <small>Register your attendance account</small>
+            </span>
+          </button>
 
-        <button
-          class="primary-btn"
-          onclick="showHome()"
-        >
-          DONE
-        </button>
-
-      </div>
-
-    </section>
-
-
-    <!-- ERROR -->
-
-    <section
-      id="errorPage"
-      class="page"
-    >
-
-      <div class="card error-card">
-
-        <div class="error-icon">
-          !
+          <button class="action-button admin" type="button" onclick="showAdminLogin()">
+            <span class="button-icon">🔐</span>
+            <span>
+              <strong>ADMIN</strong>
+              <small>QR generation and monitoring</small>
+            </span>
+          </button>
         </div>
 
-        <h2>
-          Attendance Error
-        </h2>
+        <div class="info-strip">
+          <span>📅 September 9–11, 2026</span>
+          <span>•</span>
+          <span>📍 DJFANHS</span>
+        </div>
+      </section>
 
-        <p id="errorMessage"></p>
+      <!-- OLD IDENTIFICATION PAGE KEPT FOR COMPATIBILITY, BUT NOT USED -->
+      <section id="identifyPage" class="page">
+        <div class="card form-card">
+          <div class="section-icon">👤</div>
+          <h2>Identify Participant</h2>
+          <p>Enter your License No.</p>
 
-        <button
-          class="primary-btn"
-          onclick="showHome()"
-        >
-          OK
-        </button>
+          <form onsubmit="identifyUser(event)">
+            <label for="identifyLicense">License No.</label>
+            <input id="identifyLicense" type="text" autocomplete="off">
+            <button class="primary-button" type="submit">CONTINUE</button>
+          </form>
 
-      </div>
+          <button class="link-button" type="button" onclick="showHome()">← Back to Home</button>
+        </div>
+      </section>
 
-    </section>
+      <!-- REGISTRATION -->
+      <section id="registrationPage" class="page">
+        <div class="card form-card">
+          <div class="section-icon">📝</div>
+          <h2>Participant Registration</h2>
+          <p id="registrationNote" class="registration-note">
+            Enter your details to register for INSET 2026.
+          </p>
 
+          <form onsubmit="registerUser(event)">
+            <div class="form-row">
+              <div class="field">
+                <label for="firstName">First Name <span>*</span></label>
+                <input id="firstName" type="text" autocomplete="given-name" required>
+              </div>
+              <div class="field">
+                <label for="middleName">Middle Name</label>
+                <input id="middleName" type="text" autocomplete="additional-name">
+              </div>
+            </div>
 
-    <!-- ADMIN LOGIN -->
+            <div class="field">
+              <label for="lastName">Last Name <span>*</span></label>
+              <input id="lastName" type="text" autocomplete="family-name" required>
+            </div>
 
-    <section
-      id="adminLoginPage"
-      class="page"
-    >
+            <div class="field">
+              <label for="registrationLicense">License No. <span>*</span></label>
+              <input id="registrationLicense" type="text" autocomplete="off" required>
+            </div>
 
-      <div class="card">
+            <button class="primary-button" type="submit">REGISTER PARTICIPANT</button>
+          </form>
 
-        <h2>
-          Admin Login
-        </h2>
+          <button class="link-button" type="button" onclick="showHome()">← Back to Home</button>
+        </div>
+      </section>
 
-        <form
-          onsubmit="adminLogin(event)"
-        >
-
-          <label>
-            PASSWORD
-          </label>
-
-          <input
-            id="adminPassword"
-            type="password"
-            required
-          >
-
-          <button
-            class="primary-btn"
-            type="submit"
-          >
-            LOGIN
-          </button>
-
-        </form>
-
-        <button
-          class="link-btn"
-          onclick="showHome()"
-        >
-          ← Back
-        </button>
-
-      </div>
-
-    </section>
-
-
-    <!-- ADMIN -->
-
-    <section
-      id="adminPage"
-      class="page"
-    >
-
-      <div class="card">
-
-        <h2>
-          Admin Attendance Control
-        </h2>
-
-
-        <label>
-  ATTENDANCE DATE
-</label>
-
-<input
-  id="attendanceDate"
-  type="date"
-  min="2026-09-09"
-  max="2026-09-11"
->
-
-
-        <div class="admin-buttons">
-
-          <button
-            class="primary-btn"
-            onclick="generateQR('TIME-IN')"
-          >
-            GENERATE TIME-IN QR
-          </button>
-
-
-          <button
-            class="primary-btn"
-            onclick="generateQR('TIME-OUT')"
-          >
-            GENERATE TIME-OUT QR
-          </button>
-
+      <!-- QR SCANNER -->
+      <section id="scannerPage" class="page scanner-page">
+        <div class="scanner-header">
+          <div>
+            <div class="eyebrow">ATTENDANCE SCANNER</div>
+            <h2>Scan QR Code</h2>
+          </div>
+          <div class="live-badge">LIVE</div>
         </div>
 
+        <div class="scanner-card">
+          <div class="scanner-frame">
+            <div id="reader" class="reader"></div>
+          </div>
+          <p id="scannerStatus" class="scanner-status">Requesting camera access...</p>
+        </div>
 
-        <div
-          id="qrContainer"
-          class="qr-container"
-        ></div>
-
-
-        <div
-          id="qrStatus"
-          class="qr-status"
-        ></div>
-
-
-        <button
-          class="secondary-btn"
-          onclick="showHome()"
-        >
-          EXIT ADMIN
+        <button class="stop-scanner-button" type="button" onclick="showHome()">
+          Cancel / Back to Home
         </button>
+      </section>
 
-      </div>
+      <!-- SUCCESS -->
+      <section id="successPage" class="page">
+        <div class="card result-card success-card">
+          <div class="result-icon success-icon">✓</div>
+          <div class="eyebrow">ATTENDANCE RECORDED</div>
+          <h2>Success!</h2>
+          <div id="successDetails" class="result-details"></div>
+          <button class="primary-button" type="button" onclick="showHome()">DONE</button>
+        </div>
+      </section>
 
-    </section>
+      <!-- ERROR -->
+      <section id="errorPage" class="page">
+        <div class="card result-card error-card">
+          <div class="result-icon error-icon">!</div>
+          <div class="eyebrow">ATTENDANCE SYSTEM</div>
+          <h2>Unable to Continue</h2>
+          <p id="errorMessage" class="error-message"></p>
+          <button class="primary-button" type="button" onclick="showHome()">BACK TO HOME</button>
+        </div>
+      </section>
 
+      <!-- ADMIN LOGIN -->
+      <section id="adminLoginPage" class="page">
+        <div class="card form-card narrow-card">
+          <div class="section-icon">🔐</div>
+          <h2>Administrator Login</h2>
+          <p>Enter the administrator password.</p>
 
-  </main>
+          <form onsubmit="adminLogin(event)">
+            <label for="adminPassword">Password</label>
+            <input id="adminPassword" type="password" autocomplete="current-password" required>
+            <button class="primary-button" type="submit">LOGIN</button>
+          </form>
 
+          <button class="link-button" type="button" onclick="showHome()">← Back to Home</button>
+        </div>
+      </section>
 
-  <!-- LOADING -->
+      <!-- ADMIN -->
+      <section id="adminPage" class="page">
+        <div class="admin-header">
+          <div>
+            <div class="eyebrow">ADMINISTRATOR</div>
+            <h2>QR Attendance Control</h2>
+          </div>
+          <button class="small-button" type="button" onclick="showHome()">HOME</button>
+        </div>
 
-  <div
-    id="loading"
-    class="loading hidden"
-  >
+        <div class="card admin-card">
+          <div class="field">
+            <label for="attendanceDate">Attendance Date</label>
+            <input id="attendanceDate" type="date" min="2026-09-09" max="2026-09-11">
+          </div>
 
-    <div class="spinner"></div>
+          <div class="admin-actions">
+            <button class="qr-button time-in" type="button" onclick="generateQR('TIME-IN')">
+              <span>🟢</span> GENERATE TIME-IN QR
+            </button>
+            <button class="qr-button time-out" type="button" onclick="generateQR('TIME-OUT')">
+              <span>🔴</span> GENERATE TIME-OUT QR
+            </button>
+          </div>
 
-    <p>
-      Please wait...
-    </p>
+          <div class="qr-output">
+            <div id="qrContainer" class="qr-container"></div>
+            <div id="qrStatus" class="qr-status"></div>
+          </div>
+
+          <button class="secondary-button" type="button" onclick="clearQR()">CLEAR QR</button>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="app-footer">
+      <div>INSET 2026 Attendance System</div>
+      <div>Don Juan F. Avalon National High School</div>
+    </footer>
 
   </div>
 
+  <!-- LOADING OVERLAY -->
+  <div id="loading" class="loading-overlay hidden">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <div>Processing...</div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
-
 </body>
-
 </html>
