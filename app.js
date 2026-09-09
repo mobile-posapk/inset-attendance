@@ -1162,83 +1162,71 @@ function selectQRDay(date) {
 async function generateQR(mode) {
 
   if (!currentQRDate) {
-
-    showQRStatus(
-      '⚠️ Please select an attendance date.'
-    );
-
+    showQRStatus('⚠️ Please select an attendance date.');
     return;
   }
 
+  mode = String(mode || '').trim().toUpperCase();
 
-  showLoading(
-    'Generating QR code...'
-  );
-
+  showLoading('Generating QR code...');
 
   try {
 
-    const result =
-      await apiRequest(
-        'generateQR',
-        {
-          date: currentQRDate,
-          mode
-        }
-      );
+    const result = await apiRequest('generateQR', {
+      date: currentQRDate,
+      mode: mode
+    });
 
-
-    hideLoading();
-
-
-    if (!result.success) {
+    if (!result || !result.success) {
+      hideLoading();
 
       showQRStatus(
-        result.message ||
-        'Unable to generate QR code.'
+        '⚠️ ' +
+        (result?.message || 'Unable to generate QR code.')
       );
 
       return;
     }
 
+    if (!result.token) {
+      hideLoading();
+
+      showQRStatus(
+        '⚠️ QR token was not generated.'
+      );
+
+      return;
+    }
 
     currentQRData = result;
     currentQRMode = mode;
 
+    await displayQR(result);
 
-    await displayQR(
-      result
-    );
-
+    hideLoading();
 
     const downloadButton =
-      document.getElementById(
-        'downloadQrButton'
-      );
+      document.getElementById('downloadQrButton');
 
     if (downloadButton) {
       downloadButton.disabled = false;
     }
 
-
     showQRStatus(
-      `${mode} QR generated for ${formatDate(currentQRDate)}.`
+      `✅ ${mode} QR generated for ${formatDate(currentQRDate)}.`
     );
-
 
   } catch (error) {
 
     hideLoading();
 
-    console.error(error);
+    console.error('QR GENERATION ERROR:', error);
 
     showQRStatus(
       '⚠️ Unable to generate QR code.'
     );
-
   }
 }
-
 
 /* =========================================================
    QR DISPLAY
@@ -1247,57 +1235,61 @@ async function generateQR(mode) {
 async function displayQR(data) {
 
   const container =
-    document.getElementById(
-      'qrContainer'
-    );
+    document.getElementById('qrContainer');
 
   if (!container) {
     return;
   }
 
-
   container.innerHTML = '';
 
+  if (!data || !data.token) {
+    throw new Error('Missing QR token.');
+  }
 
-  await loadQRCodeLibrary();
+  /*
+   * Generate a REAL QR code directly from the token.
+   * No QRCode.js library is required.
+   */
+  const qrImage =
+    document.createElement('img');
 
+  qrImage.id = 'generatedQRImage';
 
-  const canvas =
-    document.createElement(
-      'canvas'
-    );
+  qrImage.alt =
+    'INSET 2026 Attendance QR Code';
 
-  container.appendChild(
-    canvas
-  );
+  qrImage.width = 320;
+  qrImage.height = 320;
 
+  qrImage.style.width = '320px';
+  qrImage.style.height = '320px';
+  qrImage.style.display = 'block';
+  qrImage.style.margin = 'auto';
 
-  QRCode.toCanvas(
-    canvas,
-    data.token,
-    {
-      width: 320,
-      margin: 2
-    },
-    error => {
+  /*
+   * QR contains ONLY the secure attendance token.
+   */
+  qrImage.src =
+    'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=' +
+    encodeURIComponent(data.token);
 
-      if (error) {
+  await new Promise((resolve, reject) => {
 
-        console.error(
-          'QR generation error:',
-          error
-        );
+    qrImage.onload = () => {
+      resolve();
+    };
 
-        showQRStatus(
-          '⚠️ Unable to render QR code.'
-        );
+    qrImage.onerror = () => {
+      reject(
+        new Error('Unable to create QR image.')
+      );
+    };
 
-      }
+  });
 
-    }
-  );
+  container.appendChild(qrImage);
 }
-
 
 /* =========================================================
    LOAD QR LIBRARY
@@ -1348,24 +1340,14 @@ function loadQRCodeLibrary() {
    DOWNLOAD CURRENT QR
    ========================================================= */
 
-function downloadCurrentQR() {
+async function downloadCurrentQR() {
 
-  const container =
+  const image =
     document.getElementById(
-      'qrContainer'
+      'generatedQRImage'
     );
 
-  if (!container) {
-    return;
-  }
-
-
-  const canvas =
-    container.querySelector(
-      'canvas'
-    );
-
-  if (!canvas) {
+  if (!image) {
 
     alert(
       'Please generate a QR code first.'
@@ -1374,34 +1356,21 @@ function downloadCurrentQR() {
     return;
   }
 
-
   const link =
-    document.createElement(
-      'a'
-    );
-
-
-  const date =
-    currentQRDate || 'attendance';
-
-
-  const mode =
-    currentQRMode || 'QR';
-
-
-  link.download =
-    `INSET2026_${date}_${mode}.png`;
-
+    document.createElement('a');
 
   link.href =
-    canvas.toDataURL(
-      'image/png'
-    );
+    image.src;
 
+  link.download =
+    `INSET2026_${currentQRDate}_${currentQRMode}.png`;
+
+  document.body.appendChild(link);
 
   link.click();
-}
 
+  document.body.removeChild(link);
+}
 
 /* =========================================================
    CLEAR QR
