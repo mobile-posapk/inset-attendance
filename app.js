@@ -93,32 +93,54 @@ function $(id) {
   return document.getElementById(id);
 }
 
+/* =========================================================
+   PAGE MANAGEMENT
+   ========================================================= */
+
 function showPage(pageId) {
-  const pages = [
-    "homePage",
-    "identifyPage",
-    "registrationPage",
-    "scannerPage",
-    "successPage",
-    "errorPage",
-    "adminLoginPage",
-    "adminPage"
-  ];
 
-  pages.forEach(function (id) {
-    const el = $(id);
+  const pages =
+    document.querySelectorAll(".page");
 
-    if (el) {
-      el.style.display = id === pageId ? "block" : "none";
-    }
+
+  /*
+   * Hide EVERY page first.
+   * We explicitly control display here so
+   * inline styles cannot leave another page visible.
+   */
+  pages.forEach(function(page) {
+
+    page.classList.remove("active");
+
+    page.style.display = "none";
+
   });
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
+
+  /*
+   * Show ONLY the requested page.
+   */
+  const target =
+    document.getElementById(pageId);
+
+
+  if (!target) {
+
+    console.error(
+      "Page not found:",
+      pageId
+    );
+
+    return;
+
+  }
+
+
+  target.style.display = "block";
+
+  target.classList.add("active");
+
 }
-
 function setText(id, text) {
   const el = $(id);
 
