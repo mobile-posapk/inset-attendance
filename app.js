@@ -796,32 +796,68 @@ function showUserSelection(users) {
         ? "****" + license.slice(-4)
         : license;
 
-    const button =
-      document.createElement("button");
+    const card =
+      document.createElement("div");
 
-    button.type = "button";
-    button.className =
-      "registered-user-button";
+    card.className =
+      "registered-user-card";
 
-    button.innerHTML = `
-      <div class="registered-user-name">
-        ${escapeHtml(fullName)}
+    card.innerHTML = `
+      <div class="registered-user-info">
+        <div class="registered-user-name">
+          ${escapeHtml(fullName)}
+        </div>
+
+        <div class="registered-user-license">
+          PRC License No.:
+          ${escapeHtml(maskedLicense)}
+        </div>
       </div>
 
-      <div class="registered-user-license">
-        PRC License No.:
-        ${escapeHtml(maskedLicense)}
+      <div class="registered-user-actions">
+
+        <button
+          type="button"
+          class="registered-user-button"
+        >
+          SELECT
+        </button>
+
+        <button
+          type="button"
+          class="remove-button"
+        >
+          REMOVE
+        </button>
+
       </div>
     `;
 
-    button.addEventListener(
+    const selectButton =
+      card.querySelector(
+        ".registered-user-button"
+      );
+
+    const removeButton =
+      card.querySelector(
+        ".remove-button"
+      );
+
+    selectButton.addEventListener(
       "click",
       function() {
         chooseRegisteredUser(index);
       }
     );
 
-    container.appendChild(button);
+    removeButton.addEventListener(
+      "click",
+      function() {
+        removeRegisteredUser(index);
+      }
+    );
+
+    container.appendChild(card);
   });
 
   const registerButton =
@@ -842,7 +878,12 @@ function showUserSelection(users) {
   );
 
   container.appendChild(registerButton);
-}function chooseRegisteredUser(index) {
+}
+
+
+
+
+function chooseRegisteredUser(index) {
 
   const users = getRegisteredUsers();
 
