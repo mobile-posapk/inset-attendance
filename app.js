@@ -1277,59 +1277,57 @@ async function displayQR(data) {
     document.getElementById('qrContainer');
 
   if (!container) {
-    return;
+    throw new Error('QR container not found.');
+  }
+
+  if (!data || !data.token) {
+    throw new Error('QR token is missing.');
   }
 
   container.innerHTML = '';
 
-  if (!data || !data.token) {
-    throw new Error('Missing QR token.');
-  }
-
   /*
-   * Generate a REAL QR code directly from the token.
-   * No QRCode.js library is required.
+   * Use the QRCode library already used by
+   * the attendance system.
    */
-  const qrImage =
-    document.createElement('img');
+  await loadQRCodeLibrary();
 
-  qrImage.id = 'generatedQRImage';
+  const canvas =
+    document.createElement('canvas');
 
-  qrImage.alt =
-    'INSET 2026 Attendance QR Code';
+  canvas.width = 400;
+  canvas.height = 400;
 
-  qrImage.width = 320;
-  qrImage.height = 320;
+  canvas.style.width = '320px';
+  canvas.style.height = '320px';
+  canvas.style.display = 'block';
+  canvas.style.margin = 'auto';
 
-  qrImage.style.width = '320px';
-  qrImage.style.height = '320px';
-  qrImage.style.display = 'block';
-  qrImage.style.margin = 'auto';
-
-  /*
-   * QR contains ONLY the secure attendance token.
-   */
-  qrImage.src =
-    'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=' +
-    encodeURIComponent(data.token);
+  container.appendChild(canvas);
 
   await new Promise((resolve, reject) => {
 
-    qrImage.onload = () => {
-      resolve();
-    };
+    QRCode.toCanvas(
+      canvas,
+      data.token,
+      {
+        width: 400,
+        margin: 3,
+        errorCorrectionLevel: 'H'
+      },
+      function(error) {
 
-    qrImage.onerror = () => {
-      reject(
-        new Error('Unable to create QR image.')
-      );
-    };
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      }
+    );
 
   });
-
-  container.appendChild(qrImage);
 }
-
 /* =========================================================
    LOAD QR LIBRARY
    ========================================================= */
@@ -1379,30 +1377,32 @@ function loadQRCodeLibrary() {
    DOWNLOAD CURRENT QR
    ========================================================= */
 
-async function downloadCurrentQR() {
+function downloadCurrentQR() {
 
-  const image =
-    document.getElementById(
-      'generatedQRImage'
-    );
+  const container =
+    document.getElementById('qrContainer');
 
-  if (!image) {
+  if (!container) {
+    alert('QR container not found.');
+    return;
+  }
 
-    alert(
-      'Please generate a QR code first.'
-    );
+  const canvas =
+    container.querySelector('canvas');
 
+  if (!canvas) {
+    alert('Please generate a QR code first.');
     return;
   }
 
   const link =
     document.createElement('a');
 
-  link.href =
-    image.src;
-
   link.download =
     `INSET2026_${currentQRDate}_${currentQRMode}.png`;
+
+  link.href =
+    canvas.toDataURL('image/png');
 
   document.body.appendChild(link);
 
@@ -1410,7 +1410,6 @@ async function downloadCurrentQR() {
 
   document.body.removeChild(link);
 }
-
 /* =========================================================
    CLEAR QR
    ========================================================= */
