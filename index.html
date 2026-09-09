@@ -1,1 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>INSET 2026 Attendance</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+  <!-- QR SCANNER -->
+  <script
+    src="https://unpkg.com/html5-qrcode"
+    type="text/javascript"
+  ></script>
+
+</head>
+
+
+<body>
+
+  <!-- HEADER -->
+
+  <header class="app-header">
+
+    <div class="header-title">
+      INSET 2026
+    </div>
+
+    <div class="header-subtitle">
+      ATTENDANCE SYSTEM
+    </div>
+
+  </header>
+
+
+  <!-- MAIN -->
+
+  <main class="container">
+
+
+    <!-- HOME -->
+
+    <section
+      id="homePage"
+      class="page active"
+    >
+
+      <div class="card home-card">
+
+        <h1>
+          INSET 2026
+        </h1>
+
+        <p>
+          Attendance Monitoring System
+        </p>
+
+        <button
+          class="primary-btn"
+          onclick="startAttendance()"
+        >
+          📷 SCAN QR CODE
+        </button>
+
+        <button
+          class="secondary-btn"
+          onclick="showAdminLogin()"
+        >
+          ⚙️ ADMIN
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- IDENTIFICATION -->
+
+    <section
+      id="identifyPage"
+      class="page"
+    >
+
+      <div class="card">
+
+        <h2>
+          Identify Participant
+        </h2>
+
+        <p>
+          Enter your License No. to continue.
+        </p>
+
+        <form
+          onsubmit="identifyUser(event)"
+        >
+
+          <label>
+            LICENSE NO.
+          </label>
+
+          <input
+            id="identifyLicense"
+            type="text"
+            placeholder="Enter License No."
+            required
+            autocomplete="off"
+          >
+
+          <button
+            type="submit"
+            class="primary-btn"
+          >
+            CONTINUE
+          </button>
+
+        </form>
+
+        <button
+          class="link-btn"
+          onclick="showHome()"
+        >
+          ← Back
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- REGISTRATION -->
+
+    <section
+      id="registrationPage"
+      class="page"
+    >
+
+      <div class="card">
+
+        <h2>
+          Participant Registration
+        </h2>
+
+        <p>
+          First-time participants must register.
+        </p>
+
+
+        <form
+          onsubmit="registerUser(event)"
+        >
+
+          <label>
+            FIRST NAME
+          </label>
+
+          <input
+            id="firstName"
+            required
+          >
+
+
+          <label>
+            MIDDLE NAME
+          </label>
+
+          <input
+            id="middleName"
+          >
+
+
+          <label>
+            LAST NAME
+          </label>
+
+          <input
+            id="lastName"
+            required
+          >
+
+
+          <label>
+            LICENSE NO.
+          </label>
+
+          <input
+            id="registrationLicense"
+            required
+            autocomplete="off"
+          >
+
+
+          <button
+            type="submit"
+            class="primary-btn"
+          >
+            REGISTER
+          </button>
+
+        </form>
+
+      </div>
+
+    </section>
+
+
+    <!-- SCANNER -->
+
+    <section
+      id="scannerPage"
+      class="page"
+    >
+
+      <div class="card scanner-card">
+
+        <h2>
+          Scan Attendance QR
+        </h2>
+
+        <p id="scannerStatus">
+          Preparing camera...
+        </p>
+
+
+        <div
+          id="reader"
+          class="qr-reader"
+        ></div>
+
+
+        <button
+          class="secondary-btn"
+          onclick="stopScanner(); showHome();"
+        >
+          CANCEL
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- SUCCESS -->
+
+    <section
+      id="successPage"
+      class="page"
+    >
+
+      <div class="card success-card">
+
+        <div class="success-icon">
+          ✓
+        </div>
+
+        <h2>
+          Attendance Recorded
+        </h2>
+
+        <div id="successDetails"></div>
+
+        <button
+          class="primary-btn"
+          onclick="showHome()"
+        >
+          DONE
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- ERROR -->
+
+    <section
+      id="errorPage"
+      class="page"
+    >
+
+      <div class="card error-card">
+
+        <div class="error-icon">
+          !
+        </div>
+
+        <h2>
+          Attendance Error
+        </h2>
+
+        <p id="errorMessage"></p>
+
+        <button
+          class="primary-btn"
+          onclick="showHome()"
+        >
+          OK
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- ADMIN LOGIN -->
+
+    <section
+      id="adminLoginPage"
+      class="page"
+    >
+
+      <div class="card">
+
+        <h2>
+          Admin Login
+        </h2>
+
+        <form
+          onsubmit="adminLogin(event)"
+        >
+
+          <label>
+            PASSWORD
+          </label>
+
+          <input
+            id="adminPassword"
+            type="password"
+            required
+          >
+
+          <button
+            class="primary-btn"
+            type="submit"
+          >
+            LOGIN
+          </button>
+
+        </form>
+
+        <button
+          class="link-btn"
+          onclick="showHome()"
+        >
+          ← Back
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- ADMIN -->
+
+    <section
+      id="adminPage"
+      class="page"
+    >
+
+      <div class="card">
+
+        <h2>
+          Admin Attendance Control
+        </h2>
+
+
+        <label>
+          ATTENDANCE DATE
+        </label>
+
+        <input
+          id="attendanceDate"
+          type="date"
+          min="2026-09-09"
+          max="2026-09-11"
+        >
+
+
+        <label>
+          OFFICIAL TIME
+        </label>
+
+        <input
+          id="attendanceTime"
+          type="time"
+        >
+
+
+        <div class="admin-buttons">
+
+          <button
+            class="primary-btn"
+            onclick="generateQR('TIME-IN')"
+          >
+            GENERATE TIME-IN QR
+          </button>
+
+
+          <button
+            class="primary-btn"
+            onclick="generateQR('TIME-OUT')"
+          >
+            GENERATE TIME-OUT QR
+          </button>
+
+        </div>
+
+
+        <div
+          id="qrContainer"
+          class="qr-container"
+        ></div>
+
+
+        <div
+          id="qrStatus"
+          class="qr-status"
+        ></div>
+
+
+        <button
+          class="secondary-btn"
+          onclick="showHome()"
+        >
+          EXIT ADMIN
+        </button>
+
+      </div>
+
+    </section>
+
+
+  </main>
+
+
+  <!-- LOADING -->
+
+  <div
+    id="loading"
+    class="loading hidden"
+  >
+
+    <div class="spinner"></div>
+
+    <p>
+      Please wait...
+    </p>
+
+  </div>
+
+
+  <script src="app.js"></script>
+
+</body>
+
+</html>
