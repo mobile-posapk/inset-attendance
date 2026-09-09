@@ -73,73 +73,139 @@ function hideLoading() {
    API
    ========================================================= */
 
-async function apiRequest(action, data = {}) {
+function apiRequest(action, data = {}) {
 
-  const params = new URLSearchParams();
+  return new Promise((resolve, reject) => {
 
-  params.set('action', action);
-
-  Object.keys(data).forEach(key => {
-    if (data[key] !== undefined && data[key] !== null) {
-      params.set(key, String(data[key]));
-    }
-  });
-
-  const url =
-    `${API_URL}?${params.toString()}`;
-
-  try {
-
-    const response = await fetch(url, {
-      method: 'GET',
-      redirect: 'follow',
-      cache: 'no-store'
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-    }
-
-    const text =
-      await response.text();
-
-    if (!text) {
-      throw new Error(
-        'Empty response from server.'
-      );
-    }
-
-    let result;
-
-    try {
-      result = JSON.parse(text);
-    } catch (jsonError) {
-
-      console.error(
-        'Invalid server response:',
-        text
+    const callbackName =
+      'insetAPI_' +
+      Date.now() +
+      '_' +
+      Math.floor(
+        Math.random() * 100000
       );
 
-      throw new Error(
-        'The Google Apps Script did not return JSON. Check the Web App deployment.'
-      );
-    }
+    const script =
+      document.createElement('script');
 
-    return result;
+    const params =
+      new URLSearchParams();
 
-  } catch (error) {
-
-    console.error(
-      `API ERROR [${action}]:`,
-      error
+    params.set(
+      'action',
+      action
     );
 
-    throw error;
-  }
-}
+    params.set(
+      'callback',
+      callbackName
+    );
 
+    Object.keys(data).forEach(key => {
+
+      if (
+        data[key] !== undefined &&
+        data[key] !== null
+      ) {
+
+        params.set(
+          key,
+          String(data[key])
+        );
+
+      }
+
+    });
+
+    const url =
+      `${API_URL}?${params.toString()}`;
+
+
+    let finished = false;
+
+
+    function cleanup() {
+
+      if (script.parentNode) {
+        script.parentNode.removeChild(
+          script
+        );
+      }
+
+      try {
+        delete window[callbackName];
+      } catch (error) {
+        window[callbackName] =
+          undefined;
+      }
+
+    }
+
+
+    window[callbackName] =
+      function(result) {
+
+        if (finished) {
+          return;
+        }
+
+        finished = true;
+
+        cleanup();
+
+        resolve(result);
+
+      };
+
+
+    script.onerror =
+      function() {
+
+        if (finished) {
+          return;
+        }
+
+        finished = true;
+
+        cleanup();
+
+        reject(
+          new Error(
+            'Unable to connect to the attendance server.'
+          )
+        );
+
+      };
+
+
+    document.head.appendChild(
+      script
+    );
+
+
+    /*
+     * Prevent an endless loading screen.
+     */
+    setTimeout(() => {
+
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+
+      cleanup();
+
+      reject(
+        new Error(
+          'Attendance server connection timed out.'
+        )
+      );
+
+    }, 15000);
+
+  });
+}
 
 /* =========================================================
    HOME
