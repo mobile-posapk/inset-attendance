@@ -1,212 +1,304 @@
+/* =========================================================
+   INSET 2026 ATTENDANCE SYSTEM
+   FINAL app.js
+   ========================================================= */
+
+"use strict";
+
+/* =========================================================
+   CONFIGURATION
+   ========================================================= */
+
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9emBZvJ_wsEi1CqABGV5-g0jIcZ0Ji7TqNOccygIlIflF3w/exec';
-
-const EVENT_DATES = [
-  '2026-09-09',
-  '2026-09-10',
-  '2026-09-11'
-];
-
-const LICENSE_KEY = 'inset2026_license';
-const SELECTED_USER_KEY = 'inset2026_selected_user';
-
-let html5QrCode = null;
-let currentQRData = null;
-let currentQRMode = null;
-let currentQRDate = null;
-let selectedUser = null;
-
+  "https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9emBZvJ_wsEi1CqABGV5-g0jIcZ0Ji7TqNOccygIlIflF3w/exec";
 
 /* =========================================================
-   PAGE NAVIGATION
+   MAINTENANCE MODE
    ========================================================= */
-
-function showPage(pageId) {
-
-  document.querySelectorAll('.page').forEach(page => {
-    page.classList.remove('active');
-  });
-
-  const page =
-    document.getElementById(pageId);
-
-  if (page) {
-    page.classList.add('active');
-  }
-
-}
-
-
-function goHome() {
-
-  stopScanner();
-
-  selectedUser = null;
-
-  localStorage.removeItem(
-    SELECTED_USER_KEY
-  );
-
-  showPage('homePage');
-
-}
-
 
 /* =========================================================
-   LOADING
+   SYSTEM MAINTENANCE CHECK
    ========================================================= */
 
-function showLoading(
-  message = 'Please wait...'
-) {
+async function checkSystemMaintenance() {
 
-  const overlay =
-    document.getElementById(
-      'loadingOverlay'
-    );
+  /*
+   * Hide all pages while checking the server.
+   */
+  document
+    .querySelectorAll(".page")
+    .forEach(function(page) {
 
-  const messageElement =
-    document.getElementById(
-      'loadingMessage'
-    );
+      page.classList.remove("active");
 
-  if (messageElement) {
-    messageElement.textContent =
-      message;
-  }
+      page.style.display = "none";
 
-  if (overlay) {
-    overlay.classList.add('show');
-  }
-
-}
-
-
-function hideLoading() {
-
-  const overlay =
-    document.getElementById(
-      'loadingOverlay'
-    );
-
-  if (overlay) {
-    overlay.classList.remove('show');
-  }
-
-}
-
-
-/* =========================================================
-   API
-   ========================================================= */
-
-async function apiRequest(
-  action,
-  data = {}
-) {
-
-  const params =
-    new URLSearchParams();
-
-  params.set(
-    'action',
-    action
-  );
-
-  Object.keys(data).forEach(
-    key => {
-
-      if (
-        data[key] !== undefined &&
-        data[key] !== null
-      ) {
-
-        params.set(
-          key,
-          String(data[key])
-        );
-
-      }
-
-    }
-  );
-
-  const url =
-    `${API_URL}?${params.toString()}`;
+    });
 
 
   try {
 
-    const response =
-      await fetch(
-        url,
-        {
-          method: 'GET',
-          redirect: 'follow',
-          cache: 'no-store'
-        }
+    const result =
+      await apiCall(
+        "getSystemStatus",
+        {}
       );
+
+
+    console.log(
+      "SYSTEM STATUS:",
+      result
+    );
+
+
+    /*
+     * MAINTENANCE MODE
+     */
+    if (
+      result &&
+      result.maintenance === true
+    ) {
+
+      showPage(
+        "maintenancePage"
+      );
+
+      return true;
+
+    }
+
+
+    /*
+     * NORMAL SYSTEM
+     */
+    showPage(
+      "homePage"
+    );
+
+    return false;
+
+
+  } catch (error) {
+
+    console.error(
+      "Maintenance status check failed:",
+      error
+    );
+
+
+    /*
+     * If the server cannot be checked,
+     * allow the normal system to open.
+     */
+    showPage(
+      "homePage"
+    );
+
+    return false;
+
+  }
+
+}
+const EVENT_START = "2026-09-09";
+const EVENT_END   = "2026-09-11";
+
+const LICENSE_STORAGE_KEY = "inset_license";
+const REGISTERED_USERS_STORAGE_KEY = "inset_registered_users";
+
+const ADMIN_PASSWORD = "INSET2026ADMIN";
+
+/* =========================================================
+   GLOBAL VARIABLES
+   ========================================================= */
+
+let scanner = null;
+let scannerRunning = false;
+let scannerProcessing = false;
+
+let qrCountdownTimer = null;
+
+let currentParticipant = null;
+let selectedUserIndex = null;
+
+let currentQRData = null;
+let currentQRMode = "";
+let currentQRDate = "";
+
+let apiRequestInProgress = false;
+
+
+/* =========================================================
+   BASIC HELPERS
+   ========================================================= */
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+/* =========================================================
+   PAGE MANAGEMENT
+   ========================================================= */
+
+function showPage(pageId) {
+
+  const pages =
+    document.querySelectorAll(".page");
+
+
+  /*
+   * Hide EVERY page first.
+   * We explicitly control display here so
+   * inline styles cannot leave another page visible.
+   */
+  pages.forEach(function(page) {
+
+    page.classList.remove("active");
+
+    page.style.display = "none";
+
+  });
+
+
+  /*
+   * Show ONLY the requested page.
+   */
+  const target =
+    document.getElementById(pageId);
+
+
+  if (!target) {
+
+    console.error(
+      "Page not found:",
+      pageId
+    );
+
+    return;
+
+  }
+
+
+  target.style.display = "block";
+
+  target.classList.add("active");
+
+}
+function setText(id, text) {
+  const el = $(id);
+
+  if (el) {
+    el.textContent = text == null ? "" : String(text);
+  }
+}
+
+function escapeHtml(text) {
+  return String(text == null ? "" : text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+/* =========================================================
+   LOADING OVERLAY
+   ========================================================= */
+
+function showLoading(message) {
+  const overlay = $("loadingOverlay");
+
+  if (!overlay) {
+    return;
+  }
+
+  const messageElement =
+    overlay.querySelector(".loading-message") ||
+    overlay.querySelector("#loadingMessage");
+
+  if (messageElement) {
+    messageElement.textContent = message || "Please wait...";
+  }
+
+  overlay.style.display = "flex";
+}
+
+function hideLoading() {
+  const overlay = $("loadingOverlay");
+
+  if (overlay) {
+    overlay.style.display = "none";
+  }
+}
+
+
+/* =========================================================
+   API CONNECTION
+   ========================================================= */
+
+/*
+ * Primary method:
+ *   fetch()
+ *
+ * Fallback:
+ *   JSONP
+ *
+ * The JSONP fallback is important for browsers / in-app browsers
+ * that have problems following Google Apps Script redirects
+ * through fetch().
+ */
+
+async function apiCall(action, data) {
+  data = data || {};
+
+  const url =
+    API_URL +
+    "?action=" +
+    encodeURIComponent(action) +
+    "&data=" +
+    encodeURIComponent(JSON.stringify(data));
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      cache: "no-store"
+    });
 
     if (!response.ok) {
-
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-
+      throw new Error("HTTP " + response.status);
     }
 
-    const text =
-      await response.text();
+    const text = await response.text();
 
-    if (!text) {
-
-      throw new Error(
-        'Empty response from server.'
-      );
-
-    }
+    let result;
 
     try {
-
-      return JSON.parse(
-        text
-      );
-
-    } catch (jsonError) {
-
-      throw new Error(
-        'The Google Apps Script did not return JSON.'
-      );
-
+      result = JSON.parse(text);
+    } catch (parseError) {
+      throw new Error("Invalid server response.");
     }
 
-  } catch (fetchError) {
+    return result;
 
+  } catch (fetchError) {
     console.warn(
-      `Fetch API failed [${action}], trying JSONP fallback:`,
+      "Fetch API failed. Trying JSONP fallback...",
       fetchError
     );
 
     try {
-
-      return await apiRequestJSONP(
-        action,
-        data
-      );
-
+      return await apiCallJSONP(action, data);
     } catch (jsonpError) {
+      console.error("JSONP fallback failed:", jsonpError);
 
-      console.error(
-        `API ERROR [${action}]:`,
-        jsonpError
+      throw new Error(
+        fetchError && fetchError.message
+          ? fetchError.message
+          : "Unable to connect to the attendance server."
       );
-
-      throw fetchError;
-
     }
-
   }
-
 }
 
 
@@ -214,172 +306,233 @@ async function apiRequest(
    JSONP FALLBACK
    ========================================================= */
 
-function apiRequestJSONP(
-  action,
-  data = {}
-) {
+function apiCallJSONP(action, data) {
+  data = data || {};
 
-  return new Promise(
-    (resolve, reject) => {
+  return new Promise(function (resolve, reject) {
 
-      const callbackName =
-        '__inset2026_api_' +
-        Date.now() +
-        '_' +
-        Math.floor(
-          Math.random() * 100000
-        );
+    const callbackName =
+      "insetAttendanceCallback_" +
+      Date.now() +
+      "_" +
+      Math.floor(Math.random() * 100000);
 
+    const script = document.createElement("script");
 
-      const params =
-        new URLSearchParams();
+    let finished = false;
 
-      params.set(
-        'action',
-        action
+    const timeout = setTimeout(function () {
+
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+
+      cleanup();
+
+      reject(
+        new Error("The attendance server did not respond.")
       );
 
-      params.set(
-        'callback',
-        callbackName
-      );
+    }, 20000);
 
 
-      Object.keys(data).forEach(
-        key => {
+    function cleanup() {
+      clearTimeout(timeout);
 
-          if (
-            data[key] !== undefined &&
-            data[key] !== null
-          ) {
+      try {
+        delete window[callbackName];
+      } catch (e) {
+        window[callbackName] = undefined;
+      }
 
-            params.set(
-              key,
-              String(data[key])
-            );
-
-          }
-
-        }
-      );
-
-
-      const script =
-        document.createElement(
-          'script'
-        );
-
-
-      let finished =
-        false;
-
-
-      const cleanup = () => {
-
-        if (script.parentNode) {
-
-          script.parentNode.removeChild(
-            script
-          );
-
-        }
-
-        try {
-
-          delete window[
-            callbackName
-          ];
-
-        } catch (error) {
-
-          window[
-            callbackName
-          ] = undefined;
-
-        }
-
-      };
-
-
-      const timer =
-        setTimeout(
-          () => {
-
-            if (finished) {
-              return;
-            }
-
-            finished = true;
-
-            cleanup();
-
-            reject(
-              new Error(
-                'Attendance server connection timed out.'
-              )
-            );
-
-          },
-          15000
-        );
-
-
-      window[
-        callbackName
-      ] = result => {
-
-        if (finished) {
-          return;
-        }
-
-        finished = true;
-
-        clearTimeout(
-          timer
-        );
-
-        cleanup();
-
-        resolve(
-          result
-        );
-
-      };
-
-
-      script.onerror = () => {
-
-        if (finished) {
-          return;
-        }
-
-        finished = true;
-
-        clearTimeout(
-          timer
-        );
-
-        cleanup();
-
-        reject(
-          new Error(
-            'Unable to connect to the attendance server.'
-          )
-        );
-
-      };
-
-
-      script.src =
-        `${API_URL}?${params.toString()}`;
-
-      document.head.appendChild(
-        script
-      );
-
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
     }
-  );
 
+
+    window[callbackName] = function (result) {
+
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+
+      cleanup();
+
+      resolve(result);
+    };
+
+
+    script.onerror = function () {
+
+      if (finished) {
+        return;
+      }
+
+      finished = true;
+
+      cleanup();
+
+      reject(
+        new Error("Unable to connect to the attendance server.")
+      );
+    };
+
+
+    script.src =
+      API_URL +
+      "?action=" +
+      encodeURIComponent(action) +
+      "&data=" +
+      encodeURIComponent(JSON.stringify(data)) +
+      "&callback=" +
+      encodeURIComponent(callbackName) +
+      "&_=" +
+      Date.now();
+
+    document.head.appendChild(script);
+  });
+}
+
+
+/* =========================================================
+   CONNECTION TEST
+   ========================================================= */
+
+async function testServerConnection() {
+  try {
+    const result = await apiCall("ping", {});
+
+    return !!(
+      result &&
+      (
+        result.success === true ||
+        result.status === "ok"
+      )
+    );
+
+  } catch (error) {
+    console.error("Connection test failed:", error);
+    return false;
+  }
+}
+
+
+/* =========================================================
+   LOCAL STORAGE
+   ========================================================= */
+
+function getRegisteredUsers() {
+  try {
+    const raw =
+      localStorage.getItem(REGISTERED_USERS_STORAGE_KEY);
+
+    if (!raw) {
+      return [];
+    }
+
+    const users = JSON.parse(raw);
+
+    if (!Array.isArray(users)) {
+      return [];
+    }
+
+    return users.filter(function (user) {
+      return user &&
+        String(user.firstName || "").trim() &&
+        String(user.lastName || "").trim() &&
+        String(user.licenseNo || "").trim();
+    });
+
+  } catch (error) {
+    console.error("Unable to read registered users:", error);
+    return [];
+  }
+}
+
+function saveRegisteredUsers(users) {
+  localStorage.setItem(
+    REGISTERED_USERS_STORAGE_KEY,
+    JSON.stringify(users || [])
+  );
+}
+
+function saveSelectedLicense(licenseNo) {
+  if (licenseNo) {
+    localStorage.setItem(
+      LICENSE_STORAGE_KEY,
+      String(licenseNo).trim()
+    );
+  }
+}
+
+function getSavedLicense() {
+  return (
+    localStorage.getItem(LICENSE_STORAGE_KEY) || ""
+  ).trim();
+}
+
+
+/* =========================================================
+   DATE HELPERS
+   ========================================================= */
+
+function parseLocalDate(dateString) {
+  const parts = String(dateString).split("-");
+
+  if (parts.length !== 3) {
+    return new Date(dateString);
+  }
+
+  return new Date(
+    Number(parts[0]),
+    Number(parts[1]) - 1,
+    Number(parts[2])
+  );
+}
+
+function formatLongDate(dateString) {
+  const date = parseLocalDate(dateString);
+
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+}
+
+function formatShortDate(dateString) {
+  const date = parseLocalDate(dateString);
+
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function getDayNumber(dateString) {
+  const date = parseLocalDate(dateString);
+  const eventStart = parseLocalDate(EVENT_START);
+
+  return Math.round(
+    (
+      date.getTime() -
+      eventStart.getTime()
+    ) /
+    (24 * 60 * 60 * 1000)
+  ) + 1;
+}
+
+function isValidEventDate(dateString) {
+  return (
+    String(dateString) >= EVENT_START &&
+    String(dateString) <= EVENT_END
+  );
 }
 
 
@@ -389,747 +542,547 @@ function apiRequestJSONP(
 
 function startAttendance() {
 
-  showPage(
-    'identifyPage'
-  );
+  const users = getRegisteredUsers();
 
-  const message =
-    document.getElementById(
-      'identifyMessage'
+  if (!users.length) {
+    openRegistration(
+      "PRC ACCREDITATION"
     );
-
-  if (message) {
-    message.textContent = '';
-  }
-
-  loadRegisteredUsers();
-
-}
-
-
-/* =========================================================
-   MULTIPLE USER SELECTION
-   ========================================================= */
-
-async function loadRegisteredUsers() {
-
-  const container =
-    document.getElementById(
-      'registeredUsers'
-    );
-
-  const message =
-    document.getElementById(
-      'identifyMessage'
-    );
-
-
-  if (!container) {
     return;
   }
-
-
-  container.innerHTML = '';
-
-
-  if (message) {
-    message.textContent = '';
-  }
-
-
-  const users =
-    getSavedUsers();
-
 
   if (users.length === 1) {
+    selectedUserIndex = 0;
 
-    selectUser(
-      users[0]
+    currentParticipant = users[0];
+
+    saveSelectedLicense(
+      users[0].licenseNo
     );
 
+    confirmSelectedUser();
     return;
   }
 
-
-  if (users.length > 1) {
-
-    displayUserSelection(
-      users
-    );
-
-    return;
-  }
-
-
-  container.innerHTML = `
-    <div class="no-users-message">
-
-      <strong>
-        No registered user found.
-      </strong>
-
-      <p>
-        Please register this user first.
-      </p>
-
-    </div>
-
-    <button
-      type="button"
-      class="main-button register-button"
-      onclick="openRegistration()">
-
-      📝 REGISTER
-
-    </button>
-  `;
-
-
-  if (message) {
-
-    message.textContent =
-      'No registered user found on this phone.';
-
-  }
-
+  showUserSelection(users);
 }
 
 
 /* =========================================================
-   DISPLAY USERS
+   REGISTER
    ========================================================= */
 
-function displayUserSelection(
-  users
-) {
+function openRegistration(message) {
 
-  const container =
-    document.getElementById(
-      'registeredUsers'
-    );
+  showPage("registrationPage");
+
+  const note = $("registrationNote");
+
+  if (note) {
+    note.textContent =
+      message ||
+      "Register your details on this device.";
+  }
+
+  const firstName = $("firstName");
+
+  if (firstName) {
+    setTimeout(function () {
+      firstName.focus();
+    }, 200);
+  }
+}
 
 
-  if (!container) {
+async function submitRegistration() {
+
+  const firstName =
+    ($("firstName")?.value || "").trim();
+
+  const middleName =
+    ($("middleName")?.value || "").trim();
+
+  const lastName =
+    ($("lastName")?.value || "").trim();
+
+  const licenseNo =
+    ($("registrationLicense")?.value || "").trim();
+
+
+  if (!firstName) {
+    alert("Please enter your first name.");
+    $("firstName")?.focus();
+    return;
+  }
+
+  if (!lastName) {
+    alert("Please enter your last name.");
+    $("lastName")?.focus();
+    return;
+  }
+
+  if (!licenseNo) {
+    alert("Please enter your PRC License No.");
+    $("registrationLicense")?.focus();
     return;
   }
 
 
-  container.innerHTML = '';
-
-
-  users.forEach(
-    (user, index) => {
-
-      /*
-       * ROW
-       */
-
-      const row =
-        document.createElement(
-          'div'
-        );
-
-      row.className =
-        'registered-user-row';
-
-
-      /*
-       * SELECT USER BUTTON
-       */
-
-      const button =
-        document.createElement(
-          'button'
-        );
-
-
-      button.type =
-        'button';
-
-      button.className =
-        'registered-user-button';
-
-
-      button.innerHTML = `
-        <span class="user-number">
-          ${index + 1}
-        </span>
-
-        <span class="user-information">
-
-          <strong>
-            ${escapeHtml(
-              formatFullName(
-                user.firstName,
-                user.middleName,
-                user.lastName
-              )
-            )}
-          </strong>
-
-          <small>
-            License No.:
-            ${escapeHtml(
-              user.licenseNo
-            )}
-          </small>
-
-        </span>
-      `;
-
-
-      button.onclick = () => {
-
-        selectUser(
-          user
-        );
-
-      };
-
-
-      /*
-       * REMOVE BUTTON
-       */
-
-      const removeButton =
-        document.createElement(
-          'button'
-        );
-
-
-      removeButton.type =
-        'button';
-
-      removeButton.className =
-        'remove-account-button';
-
-      removeButton.textContent =
-        'REMOVE';
-
-
-      removeButton.onclick =
-        event => {
-
-          event.preventDefault();
-
-          event.stopPropagation();
-
-
-          const name =
-            formatFullName(
-              user.firstName,
-              user.middleName,
-              user.lastName
-            );
-
-
-          const confirmed =
-            window.confirm(
-
-              'REMOVE THIS ACCOUNT FROM THIS DEVICE?\n\n' +
-
-              name +
-
-              '\n\n' +
-
-              'This will NOT delete the participant ' +
-
-              'or attendance records from the school database.'
-
-            );
-
-
-          if (!confirmed) {
-            return;
-          }
-
-
-          removeSavedUser(
-            user.licenseNo
-          );
-
-
-          if (
-            selectedUser &&
-            normalizeLicense(
-              selectedUser.licenseNo
-            ) ===
-            normalizeLicense(
-              user.licenseNo
-            )
-          ) {
-
-            selectedUser =
-              null;
-
-            localStorage.removeItem(
-              SELECTED_USER_KEY
-            );
-
-            localStorage.removeItem(
-              LICENSE_KEY
-            );
-
-          }
-
-
-          loadRegisteredUsers();
-
-        };
-
-
-      /*
-       * ADD BOTH BUTTONS
-       */
-
-      row.appendChild(
-        button
-      );
-
-      row.appendChild(
-        removeButton
-      );
-
-      container.appendChild(
-        row
-      );
-
-    }
-  );
-
-}
-
-
-/* =========================================================
-   REMOVE SAVED USER
-   ========================================================= */
-
-function removeSavedUser(
-  licenseNo
-) {
-
-  const target =
-    normalizeLicense(
-      licenseNo
-    );
-
-
-  const users =
-    getSavedUsers().filter(
-      user =>
-        normalizeLicense(
-          user.licenseNo
-        ) !== target
-    );
-
-
-  localStorage.setItem(
-    'inset2026_registered_users',
-    JSON.stringify(
-      users
-    )
-  );
-
-}
-
-
-/* =========================================================
-   SELECT USER
-   ========================================================= */
-
-function selectUser(
-  user
-) {
-
-  if (
-    !user ||
-    !user.licenseNo
-  ) {
-
-    showIdentifyMessage(
-      '⚠️ Invalid user information.'
-    );
-
-    return;
-  }
-
-
-  selectedUser = {
-
-    firstName:
-      user.firstName || '',
-
-    middleName:
-      user.middleName || '',
-
-    lastName:
-      user.lastName || '',
-
-    licenseNo:
-      user.licenseNo
-
+  const participant = {
+    firstName: firstName,
+    middleName: middleName,
+    lastName: lastName,
+    licenseNo: licenseNo
   };
 
 
-  localStorage.setItem(
-    SELECTED_USER_KEY,
-    JSON.stringify(
-      selectedUser
-    )
-  );
-
-
-  localStorage.setItem(
-    LICENSE_KEY,
-    selectedUser.licenseNo
-  );
-
-
-  startScanner();
-
-}
-
-
-/* =========================================================
-   SAVED USERS
-   ========================================================= */
-
-function getSavedUsers() {
-
-  try {
-
-    const raw =
-      localStorage.getItem(
-        'inset2026_registered_users'
-      );
-
-
-    if (raw) {
-
-      const users =
-        JSON.parse(
-          raw
-        );
-
-
-      if (
-        Array.isArray(
-          users
-        )
-      ) {
-
-        return users.filter(
-          user =>
-            user &&
-            user.licenseNo
-        );
-
-      }
-
-    }
-
-  } catch (error) {
-
-    console.error(
-      'Unable to read registered users:',
-      error
-    );
-
-  }
-
-
-  /*
-   * OLD SINGLE USER SYSTEM
-   */
-
-  const oldLicense =
-    localStorage.getItem(
-      LICENSE_KEY
-    );
-
-
-  if (oldLicense) {
-
-    try {
-
-      const oldUser =
-        JSON.parse(
-          localStorage.getItem(
-            SELECTED_USER_KEY
-          )
-        );
-
-
-      if (
-        oldUser &&
-        oldUser.licenseNo
-      ) {
-
-        return [
-          oldUser
-        ];
-
-      }
-
-    } catch (error) {
-
-      console.warn(
-        'Old user information could not be read.'
-      );
-
-    }
-
-
-    return [
-      {
-        firstName: '',
-        middleName: '',
-        lastName: '',
-        licenseNo:
-          oldLicense
-      }
-    ];
-
-  }
-
-
-  return [];
-
-}
-
-
-/* =========================================================
-   SAVE REGISTERED USER
-   ========================================================= */
-
-function saveRegisteredUser(
-  user
-) {
-
-  if (
-    !user ||
-    !user.licenseNo
-  ) {
-    return;
-  }
-
-
-  let users =
-    getSavedUsers();
-
-
-  const normalizedLicense =
-    normalizeLicense(
-      user.licenseNo
-    );
-
-
-  const existingIndex =
-    users.findIndex(
-      item =>
-        normalizeLicense(
-          item.licenseNo
-        ) ===
-        normalizedLicense
-    );
-
-
-  if (
-    existingIndex >= 0
-  ) {
-
-    users[
-      existingIndex
-    ] = {
-
-      ...users[
-        existingIndex
-      ],
-
-      ...user
-
-    };
-
-  } else {
-
-    users.push(
-      user
-    );
-
-  }
-
-
-  localStorage.setItem(
-    'inset2026_registered_users',
-    JSON.stringify(
-      users
-    )
-  );
-
-}
-
-
-/* =========================================================
-   REGISTRATION
-   ========================================================= */
-
-function openRegistration() {
-
-  showPage(
-    'registrationPage'
-  );
-
-
-  const note =
-    document.getElementById(
-      'registrationNote'
-    );
-
-
-  if (note) {
-    note.textContent = '';
-  }
-
-}
-
-
-async function registerUser() {
-
-  const firstName =
-    getValue(
-      'firstName'
-    );
-
-  const middleName =
-    getValue(
-      'middleName'
-    );
-
-  const lastName =
-    getValue(
-      'lastName'
-    );
-
-  const licenseNo =
-    getValue(
-      'registrationLicense'
-    );
-
-
-  if (
-    !firstName ||
-    !lastName ||
-    !licenseNo
-  ) {
-
-    setRegistrationMessage(
-      '⚠️ Please complete the required fields.'
-    );
-
-    return;
-
-  }
-
-
-  showLoading(
-    'Registering participant...'
-  );
+  showLoading("Registering participant...");
 
 
   try {
 
-    const result =
-      await apiRequest(
-        'registerParticipant',
-        {
-          firstName,
-          middleName,
-          lastName,
-          licenseNo
-        }
+    const result = await apiCall(
+      "registerParticipant",
+      participant
+    );
+
+
+    if (!result || result.success !== true) {
+
+      alert(
+        result?.message ||
+        "Registration failed."
       );
-
-
-    if (!result.success) {
-
-      setRegistrationMessage(
-        result.message ||
-        'Registration failed.'
-      );
-
-      hideLoading();
 
       return;
-
     }
 
 
-    saveRegisteredUser({
+    const users = getRegisteredUsers();
 
-      firstName,
-      middleName,
-      lastName,
-      licenseNo
-
-    });
-
-
-    selectedUser = {
-
-      firstName,
-      middleName,
-      lastName,
-      licenseNo
-
-    };
-
-
-    localStorage.setItem(
-      SELECTED_USER_KEY,
-      JSON.stringify(
-        selectedUser
-      )
+    const duplicateIndex = users.findIndex(
+      function (user) {
+        return normalizeLicense(
+          user.licenseNo
+        ) === normalizeLicense(
+          licenseNo
+        );
+      }
     );
 
 
-    localStorage.setItem(
-      LICENSE_KEY,
-      licenseNo
-    );
+    if (duplicateIndex >= 0) {
+      users[duplicateIndex] = participant;
+    } else {
+      users.push(participant);
+    }
 
 
-    hideLoading();
+    saveRegisteredUsers(users);
+
+    saveSelectedLicense(licenseNo);
 
 
-    alert(
-      result.message ||
-      'Registration successful.'
-    );
+    currentParticipant = participant;
+
+    selectedUserIndex =
+      users.findIndex(function (user) {
+        return normalizeLicense(
+          user.licenseNo
+        ) === normalizeLicense(
+          licenseNo
+        );
+      });
 
 
     clearRegistrationForm();
 
+    hideLoading();
 
-    showPage(
-      'homePage'
-    );
+    confirmSelectedUser();
 
 
   } catch (error) {
 
-    hideLoading();
-
     console.error(
+      "Registration error:",
       error
     );
 
-
-    setRegistrationMessage(
-      '⚠️ Unable to connect to the attendance server.'
+    alert(
+      "Unable to connect to the attendance server.\n\n" +
+      "Please check your internet connection and try again."
     );
 
+  } finally {
+
+    hideLoading();
+  }
+}
+
+
+function clearRegistrationForm() {
+
+  [
+    "firstName",
+    "middleName",
+    "lastName",
+    "registrationLicense"
+  ].forEach(function (id) {
+
+    const el = $(id);
+
+    if (el) {
+      el.value = "";
+    }
+
+  });
+}
+
+
+/* =========================================================
+   USER SELECTION
+   ========================================================= */
+
+function showUserSelection() {
+
+  stopScanner();
+
+  currentParticipant = null;
+  selectedUserIndex = null;
+
+  const list =
+    document.getElementById("registeredUsers");
+
+  if (!list) {
+    console.error(
+      "registeredUsers element was not found."
+    );
+    return;
   }
 
+  const users =
+    getRegisteredUsers();
+
+  list.innerHTML = "";
+
+  if (users.length === 0) {
+
+    list.innerHTML = `
+      <div class="no-users-message">
+        <strong>No registered users</strong>
+        <p>Please register first.</p>
+      </div>
+    `;
+
+    showPage("identifyPage");
+    return;
+  }
+
+  users.forEach(function(user, index) {
+
+    const wrapper =
+      document.createElement("div");
+
+    wrapper.style.display = "flex";
+    wrapper.style.gap = "8px";
+    wrapper.style.marginBottom = "10px";
+    wrapper.style.alignItems = "stretch";
+
+    const selectButton =
+      document.createElement("button");
+
+    selectButton.type = "button";
+    selectButton.className =
+      "registered-user-option";
+
+    selectButton.style.flex = "1";
+
+    selectButton.innerHTML = `
+      <span class="user-radio">○</span>
+
+      <span class="registered-user-info">
+
+        <strong class="registered-user-name">
+          ${escapeHTML(
+            getParticipantFullName(user)
+          )}
+        </strong>
+
+        <small class="registered-user-license">
+          License No.
+          ${escapeHTML(
+            maskLicense(user.licenseNo)
+          )}
+        </small>
+
+      </span>
+    `;
+
+    selectButton.addEventListener(
+      "click",
+      function() {
+
+        chooseRegisteredUser(index);
+
+      }
+    );
+
+
+    // ==========================================
+    // REMOVE BUTTON
+    // ==========================================
+
+    const removeButton =
+      document.createElement("button");
+
+    removeButton.type = "button";
+
+    removeButton.textContent =
+      "REMOVE";
+
+    removeButton.style.width = "90px";
+    removeButton.style.minWidth = "90px";
+    removeButton.style.border = "none";
+    removeButton.style.borderRadius = "12px";
+    removeButton.style.background = "#dc3545";
+    removeButton.style.color = "#ffffff";
+    removeButton.style.fontWeight = "700";
+    removeButton.style.cursor = "pointer";
+
+    removeButton.addEventListener(
+      "click",
+      function(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const name =
+          getParticipantFullName(user);
+
+        const confirmed =
+          window.confirm(
+            "REMOVE THIS ACCOUNT FROM THIS DEVICE?\n\n" +
+            name +
+            "\n\n" +
+            "This will NOT delete the participant " +
+            "or attendance records from the school database."
+          );
+
+        if (!confirmed) {
+          return;
+        }
+
+        removeRegisteredUser(
+          user.licenseNo
+        );
+
+        currentParticipant = null;
+        selectedUserIndex = null;
+
+        showUserSelection();
+
+      }
+    );
+
+
+    wrapper.appendChild(
+      selectButton
+    );
+
+    wrapper.appendChild(
+      removeButton
+    );
+
+    list.appendChild(
+      wrapper
+    );
+
+  });
+
+    // REMOVE ACCOUNT BUTTON
+    const removeButton =
+      document.createElement("button");
+
+    removeButton.type = "button";
+    removeButton.textContent = "REMOVE";
+
+    removeButton.style.width = "90px";
+    removeButton.style.minWidth = "90px";
+    removeButton.style.border = "none";
+    removeButton.style.borderRadius = "12px";
+    removeButton.style.background = "#dc3545";
+    removeButton.style.color = "#ffffff";
+    removeButton.style.fontWeight = "700";
+    removeButton.style.cursor = "pointer";
+
+    removeButton.addEventListener(
+      "click",
+      function(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const confirmed =
+          window.confirm(
+            "REMOVE THIS ACCOUNT FROM THIS DEVICE?\n\n" +
+            getParticipantFullName(user) +
+            "\n\n" +
+            "This will NOT delete the participant " +
+            "or attendance records from the school database."
+          );
+
+        if (!confirmed) {
+          return;
+        }
+
+        removeRegisteredUser(
+          user.licenseNo
+        );
+
+        currentParticipant = null;
+        selectedUserIndex = null;
+
+        showUserSelection();
+
+      }
+    );
+
+    wrapper.appendChild(selectButton);
+    wrapper.appendChild(removeButton);
+  // ==========================================
+  // REGISTER ANOTHER USER
+  // ==========================================
+
+  const registerButton =
+    document.createElement("button");
+
+  registerButton.type = "button";
+  registerButton.className =
+    "secondary-button";
+
+  registerButton.textContent =
+    "➕ Register Another User";
+
+  registerButton.addEventListener(
+    "click",
+    function() {
+      openRegistration();
+    }
+  );
+
+  list.appendChild(
+    registerButton
+  );
+
+
+  showPage(
+    "identifyPage"
+  );
+
+}
+
+
+function chooseRegisteredUser(index) {
+
+  const users = getRegisteredUsers();
+
+  if (
+    index < 0 ||
+    index >= users.length
+  ) {
+    return;
+  }
+
+
+  selectedUserIndex = index;
+
+  currentParticipant = users[index];
+
+  saveSelectedLicense(
+    users[index].licenseNo
+  );
+
+
+  confirmSelectedUser();
+}
+
+
+/* =========================================================
+   CONFIRM SELECTED USER
+   ========================================================= */
+
+function confirmSelectedUser() {
+
+  if (!currentParticipant) {
+    startAttendance();
+    return;
+  }
+
+
+  const participant =
+    currentParticipant;
+
+
+  const fullName =
+    buildFullName(participant);
+
+
+  let message =
+    "You are attending as:\n\n" +
+    fullName +
+    "\n\nPRC License No.: " +
+    participant.licenseNo +
+    "\n\nContinue to QR scanner?";
+
+
+  const confirmed =
+    window.confirm(message);
+
+
+  if (!confirmed) {
+    showPage("homePage");
+    return;
+  }
+
+
+  startScanner();
+}
+
+
+/* =========================================================
+   BUILD NAME
+   ========================================================= */
+
+function buildFullName(user) {
+
+  if (!user) {
+    return "";
+  }
+
+  return [
+    user.firstName,
+    user.middleName,
+    user.lastName
+  ]
+    .map(function (value) {
+      return String(value || "").trim();
+    })
+    .filter(Boolean)
+    .join(" ");
+}
+
+
+/* =========================================================
+   LICENSE NORMALIZATION
+   ========================================================= */
+
+function normalizeLicense(value) {
+
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
 }
 
 
@@ -1139,570 +1092,386 @@ async function registerUser() {
 
 async function startScanner() {
 
+  showPage("scannerPage");
+
+  scannerProcessing = false;
+
+  setText(
+    "scannerStatus",
+    "Starting camera..."
+  );
+
+
   if (
-    !selectedUser ||
-    !selectedUser.licenseNo
+    typeof Html5Qrcode === "undefined"
   ) {
 
-    showPage(
-      'identifyPage'
+    setText(
+      "scannerStatus",
+      "Scanner library is loading..."
     );
 
-    showIdentifyMessage(
-      '⚠️ Please select a registered user first.'
-    );
 
-    return;
+    await waitForScannerLibrary();
 
+
+    if (
+      typeof Html5Qrcode === "undefined"
+    ) {
+
+      setText(
+        "scannerStatus",
+        "Unable to load the QR scanner."
+      );
+
+      return;
+    }
   }
-
-
-  showPage(
-    'scannerPage'
-  );
-
-
-  updateSelectedUserDisplay();
-
-
-  const scannerStatus =
-    document.getElementById(
-      'scannerStatus'
-    );
-
-
-  if (scannerStatus) {
-
-    scannerStatus.textContent =
-      'Allow camera access, then scan the QR code.';
-
-  }
-
-
-  setTimeout(
-    initializeScanner,
-    200
-  );
-
-}
-
-
-async function initializeScanner() {
-
-  const reader =
-    document.getElementById(
-      'reader'
-    );
-
-
-  if (!reader) {
-    return;
-  }
-
-
-  await stopScanner();
-
-
-  html5QrCode =
-    new Html5Qrcode(
-      'reader'
-    );
-
-
-  const config = {
-
-    fps: 10,
-
-    qrbox: {
-      width: 250,
-      height: 250
-    },
-
-    aspectRatio: 1
-
-  };
 
 
   try {
 
-    await html5QrCode.start(
+    if (scanner) {
+      await stopScanner();
+    }
 
+
+    scanner =
+      new Html5Qrcode("reader");
+
+
+    const config = {
+      fps: 10,
+      qrbox: {
+        width: 280,
+        height: 280
+      },
+      aspectRatio: 1
+    };
+
+
+    await scanner.start(
       {
-        facingMode:
-          'environment'
+        facingMode: "environment"
       },
-
       config,
+      function (decodedText) {
 
-      qrCodeMessage => {
-
-        processQRCode(
-          qrCodeMessage
-        );
+        handleQRCode(decodedText);
 
       },
-
-      errorMessage => {
-
+      function (errorMessage) {
+        // Ignore normal scanner decode failures.
       }
-
     );
 
 
-    const scannerStatus =
-      document.getElementById(
-        'scannerStatus'
-      );
+    scannerRunning = true;
 
 
-    if (scannerStatus) {
-
-      scannerStatus.textContent =
-        `Scanning for ${formatUserName(selectedUser)}...`;
-
-    }
+    setText(
+      "scannerStatus",
+      "Point the camera at the attendance QR code."
+    );
 
 
   } catch (error) {
 
     console.error(
-      'Camera error:',
+      "Scanner start error:",
       error
     );
 
 
-    const scannerStatus =
-      document.getElementById(
-        'scannerStatus'
-      );
+    setText(
+      "scannerStatus",
+      "Unable to start the camera."
+    );
 
 
-    if (scannerStatus) {
-
-      scannerStatus.textContent =
-        '⚠️ Unable to access the camera. Please allow camera permission and try again.';
-
-    }
-
+    alert(
+      "Unable to start the camera.\n\n" +
+      "Please allow camera permission and try again."
+    );
   }
+}
 
+
+function waitForScannerLibrary() {
+
+  return new Promise(function (resolve) {
+
+    let attempts = 0;
+
+    const timer =
+      setInterval(function () {
+
+        attempts++;
+
+
+        if (
+          typeof Html5Qrcode !== "undefined"
+        ) {
+
+          clearInterval(timer);
+          resolve();
+          return;
+        }
+
+
+        if (attempts >= 50) {
+
+          clearInterval(timer);
+          resolve();
+        }
+
+      }, 200);
+
+  });
 }
 
 
 async function stopScanner() {
 
-  if (!html5QrCode) {
+  if (!scanner) {
     return;
   }
 
 
   try {
 
-    if (
-      html5QrCode.isScanning
-    ) {
-
-      await html5QrCode.stop();
-
+    if (scannerRunning) {
+      await scanner.stop();
     }
 
   } catch (error) {
 
     console.warn(
-      'Scanner stop warning:',
+      "Scanner stop warning:",
       error
     );
 
+  } finally {
+
+    scannerRunning = false;
+
+    try {
+      scanner.clear();
+    } catch (e) {
+      // Ignore.
+    }
+
+    scanner = null;
   }
-
-
-  try {
-
-    await html5QrCode.clear();
-
-  } catch (error) {
-
-  }
-
-
-  html5QrCode =
-    null;
-
 }
 
 
 /* =========================================================
-   PROCESS QR
+   QR CODE HANDLER
    ========================================================= */
 
-let qrAlreadyProcessed =
-  false;
+async function handleQRCode(decodedText) {
 
-
-async function processQRCode(
-  decodedText
-) {
-
-  if (
-    qrAlreadyProcessed
-  ) {
-
+  if (scannerProcessing) {
     return;
-
   }
 
 
-  qrAlreadyProcessed =
-    true;
+  const token =
+    String(
+      decodedText || ""
+    ).trim();
+
+
+  if (!token) {
+    return;
+  }
 
 
   await stopScanner();
 
 
-  const token =
-    extractQRToken(
-      decodedText
-    );
+  if (!currentParticipant) {
+
+    const savedLicense =
+      getSavedLicense();
 
 
-  if (!token) {
-
-    qrAlreadyProcessed =
-      false;
-
-    showError(
-      '⚠️ Invalid attendance QR code.'
-    );
-
-    return;
-
-  }
-
-
-  if (
-    !selectedUser ||
-    !selectedUser.licenseNo
-  ) {
-
-    qrAlreadyProcessed =
-      false;
-
-    showError(
-      '⚠️ No user selected.'
-    );
-
-    return;
-
-  }
-
-
-  await recordAttendanceWithToken(
-    token,
-    selectedUser.licenseNo
-  );
-
-}
-
-
-/* =========================================================
-   EXTRACT QR TOKEN
-   ========================================================= */
-
-function extractQRToken(
-  value
-) {
-
-  if (!value) {
-    return '';
-  }
-
-
-  const text =
-    String(
-      value
-    ).trim();
-
-
-  if (
-    !text.includes('?') &&
-    !text.includes('&')
-  ) {
-
-    return text;
-
-  }
-
-
-  try {
-
-    const url =
-      new URL(
-        text
-      );
-
-
-    return (
-      url.searchParams.get(
-        'token'
-      ) || ''
-    );
-
-
-  } catch (error) {
-
-    const match =
-      text.match(
-        /[?&]token=([^&]+)/i
-      );
-
-
-    if (match) {
-
-      return decodeURIComponent(
-        match[1]
-      );
-
-    }
-
-  }
-
-
-  return '';
-
-}
-
-
-/* =========================================================
-   RECORD ATTENDANCE
-   ========================================================= */
-
-async function recordAttendanceWithToken(
-  token,
-  licenseNo
-) {
-
-  showLoading(
-    'Recording attendance...'
-  );
-
-
-  try {
-
-    const result =
-      await apiRequest(
-        'recordAttendance',
-        {
-          token,
-          licenseNo
-        }
-      );
-
-
-    hideLoading();
-
-
-    if (!result.success) {
-
-      qrAlreadyProcessed =
-        false;
+    if (!savedLicense) {
 
       showError(
-        result.message ||
-        'Unable to record attendance.'
+        "No participant has been selected."
       );
 
       return;
-
     }
 
 
-    showSuccess(
-      result
-    );
-
-
-  } catch (error) {
-
-    hideLoading();
-
-    qrAlreadyProcessed =
-      false;
-
-    console.error(
-      error
-    );
-
-
-    showError(
-      '⚠️ Unable to connect to the attendance server.'
-    );
-
+    currentParticipant = {
+      licenseNo:
+        savedLicense
+    };
   }
 
+
+  await processDecodedAttendanceToken(
+    token
+  );
 }
 
-
 /* =========================================================
-   SUCCESS
+   SUCCESS PAGE
    ========================================================= */
 
-function showSuccess(
-  result
-) {
+function showAttendanceSuccess(result) {
 
-  const message =
-    document.getElementById(
-      'successMessage'
-    );
+  const participant =
+    currentParticipant || {};
 
 
-  const details =
-    document.getElementById(
-      'successDetails'
-    );
+  const fullName =
+    buildFullName(participant);
 
 
-  if (message) {
+  let details = "";
 
-    message.textContent =
-      result.message ||
-      'Attendance recorded successfully.';
 
+  if (fullName) {
+
+    details +=
+      "<strong>" +
+      escapeHtml(fullName) +
+      "</strong><br>";
   }
 
 
-  if (details) {
+  if (participant.licenseNo) {
 
-    const userName =
-      selectedUser
-        ? formatUserName(
-            selectedUser
-          )
-        : 'Participant';
-
-
-    details.innerHTML = `
-
-      <p>
-
-        <strong>
-          NAME:
-        </strong>
-
-        ${escapeHtml(
-          userName
-        )}
-
-      </p>
+    details +=
+      "PRC License No.: " +
+      escapeHtml(
+        participant.licenseNo
+      ) +
+      "<br>";
+  }
 
 
-      <p>
+  if (result.attendanceDate) {
 
-        <strong>
-          LICENSE NO.:
-        </strong>
-
-        ${escapeHtml(
-          selectedUser.licenseNo
-        )}
-
-      </p>
+    details +=
+      "Date: " +
+      escapeHtml(
+        result.attendanceDate
+      ) +
+      "<br>";
+  }
 
 
-      ${
-        result.date
-          ? `
-            <p>
+  if (result.mode) {
 
-              <strong>
-                DATE:
-              </strong>
-
-              ${escapeHtml(
-                result.date
-              )}
-
-            </p>
-          `
-          : ''
-      }
+    details +=
+      "Attendance: " +
+      escapeHtml(
+        formatMode(result.mode)
+      ) +
+      "<br>";
+  }
 
 
-      ${
+  if (result.time) {
+
+    details +=
+      "Time: " +
+      escapeHtml(
         result.time
-          ? `
-            <p>
-
-              <strong>
-                TIME:
-              </strong>
-
-              ${escapeHtml(
-                result.time
-              )}
-
-            </p>
-          `
-          : ''
-      }
-
-
-      ${
-        result.mode
-          ? `
-            <p>
-
-              <strong>
-                TYPE:
-              </strong>
-
-              ${escapeHtml(
-                result.mode
-              )}
-
-            </p>
-          `
-          : ''
-      }
-
-    `;
-
+      );
   }
 
 
-  showPage(
-    'successPage'
+  const detailsElement =
+    $("successDetails");
+
+
+  if (detailsElement) {
+    detailsElement.innerHTML = details;
+  }
+
+
+  setText(
+    "successMessage",
+    result.message ||
+    "Attendance recorded successfully."
   );
 
+
+  showPage("successPage");
 }
 
 
 /* =========================================================
-   ERROR
+   ERROR PAGE
    ========================================================= */
 
-function showError(
-  message
-) {
+function showError(message) {
 
-  const errorElement =
-    document.getElementById(
-      'errorMessage'
-    );
+  setText(
+    "errorMessage",
+    message ||
+    "Something went wrong."
+  );
 
 
-  if (errorElement) {
+  showPage("errorPage");
+}
 
-    errorElement.textContent =
-      message;
 
+/* =========================================================
+   MODE FORMATTER
+   ========================================================= */
+
+function formatMode(mode) {
+
+  const value =
+    String(mode || "")
+      .toUpperCase()
+      .replace(/[_-]+/g, " ");
+
+
+  if (
+    value === "TIME IN" ||
+    value === "TIME-IN"
+  ) {
+    return "TIME IN";
   }
 
 
-  showPage(
-    'errorPage'
-  );
+  if (
+    value === "TIME OUT" ||
+    value === "TIME-OUT"
+  ) {
+    return "TIME OUT";
+  }
 
+
+  return value;
+}
+
+
+/* =========================================================
+   HOME RESET
+   ========================================================= */
+
+function returnHome() {
+
+  stopScanner();
+
+  scannerProcessing = false;
+
+  currentParticipant = null;
+
+  selectedUserIndex = null;
+
+  showPage("homePage");
 }
 
 
@@ -1712,325 +1481,430 @@ function showError(
 
 function openAdminLogin() {
 
-  showPage(
-    'adminLoginPage'
-  );
-
+  showPage("adminLoginPage");
 
   const password =
-    document.getElementById(
-      'adminPassword'
-    );
+    $("adminPassword");
 
 
   if (password) {
 
-    password.value =
-      '';
+    password.value = "";
 
-    password.focus();
-
+    setTimeout(function () {
+      password.focus();
+    }, 200);
   }
-
-
-  const message =
-    document.getElementById(
-      'adminLoginMessage'
-    );
-
-
-  if (message) {
-
-    message.textContent =
-      '';
-
-  }
-
 }
 
 
-async function checkAdminPassword() {
+async function adminLogin() {
 
   const password =
-    getValue(
-      'adminPassword'
-    );
+    ($("adminPassword")?.value || "").trim();
 
 
   if (!password) {
 
-    const message =
-      document.getElementById(
-        'adminLoginMessage'
-      );
+    alert(
+      "Please enter the administrator password."
+    );
 
-
-    if (message) {
-
-      message.textContent =
-        '⚠️ Please enter the administrator password.';
-
-    }
-
+    $("adminPassword")?.focus();
 
     return;
-
   }
 
 
   showLoading(
-    'Checking administrator access...'
+    "Checking administrator password..."
   );
 
 
   try {
 
     const result =
-      await apiRequest(
-        'checkAdminPassword',
+      await apiCall(
+        "checkAdminPassword",
         {
-          password
+          password: password
         }
       );
 
 
-    hideLoading();
+    if (
+      result &&
+      result.success === true
+    ) {
 
-
-    if (!result.success) {
-
-      const message =
-        document.getElementById(
-          'adminLoginMessage'
-        );
-
-
-      if (message) {
-
-        message.textContent =
-          result.message ||
-          'Incorrect administrator password.';
-
+      if ($("adminPassword")) {
+        $("adminPassword").value = "";
       }
 
 
-      return;
+      hideLoading();
 
+      showPage("adminPage");
+
+      loadAttendanceSummary();
+
+      return;
     }
 
 
-    showPage(
-      'adminPage'
+    alert(
+      result?.message ||
+      "Incorrect administrator password."
     );
 
 
   } catch (error) {
 
-    hideLoading();
-
     console.error(
+      "Admin login error:",
       error
     );
 
 
-    const message =
-      document.getElementById(
-        'adminLoginMessage'
-      );
+    alert(
+      "Unable to connect to the attendance server."
+    );
 
+  } finally {
 
-    if (message) {
-
-      message.textContent =
-        '⚠️ Unable to connect to the server.';
-
-    }
-
+    hideLoading();
   }
-
-}
-
-
-function adminLogin() {
-
-  checkAdminPassword();
-
 }
 
 
 /* =========================================================
-   QR GENERATOR
+   ADMIN PAGE
    ========================================================= */
 
-function selectQRDay(
-  date
-) {
+function openAdminPage() {
 
-  currentQRDate =
-    date;
+  showPage("adminPage");
 
-
-  const input =
-    document.getElementById(
-      'attendanceDate'
-    );
-
-
-  if (input) {
-
-    input.value =
-      date;
-
-  }
-
+  loadAttendanceSummary();
 }
 
 
-async function generateQR(
-  mode
-) {
+function logoutAdmin() {
 
-  if (!currentQRDate) {
+  clearQR();
 
-    showQRStatus(
-      '⚠️ Please select an attendance date.'
+  showPage("homePage");
+}
+
+
+/* =========================================================
+   QR SELECTION
+   ========================================================= */
+
+function selectQRDay(dateString) {
+
+  if (!isValidEventDate(dateString)) {
+
+    alert(
+      "Invalid attendance date."
     );
 
     return;
+  }
 
+
+  const input =
+    $("attendanceDate");
+
+
+  if (input) {
+    input.value = dateString;
+  }
+
+
+  currentQRDate = dateString;
+}
+
+
+/* =========================================================
+   QR GENERATION
+   ========================================================= */
+
+async function generateQR(mode) {
+
+  const dateInput =
+    $("attendanceDate");
+
+
+  const attendanceDate =
+    dateInput?.value ||
+    currentQRDate ||
+    EVENT_START;
+
+
+  if (!isValidEventDate(attendanceDate)) {
+
+    alert(
+      "Please select a valid attendance date."
+    );
+
+    return;
   }
 
 
   mode =
-    String(
-      mode || ''
-    )
-      .trim()
+    String(mode || "")
       .toUpperCase();
 
 
+  if (
+    mode !== "TIME-IN" &&
+    mode !== "TIME-OUT"
+  ) {
+
+    alert(
+      "Invalid QR attendance mode."
+    );
+
+    return;
+  }
+
+
+  currentQRDate =
+    attendanceDate;
+
+  currentQRMode =
+    mode;
+
+
+  const status =
+    $("qrStatus");
+
+
+  if (status) {
+
+    status.textContent =
+      "Generating " +
+      mode +
+      " QR code for " +
+      formatLongDate(
+        attendanceDate
+      ) +
+      "...";
+  }
+
+
+  const container =
+    $("qrContainer");
+
+
+  if (container) {
+    container.innerHTML = "";
+  }
+
+
+  const downloadButton =
+    $("downloadQrButton");
+
+
+  if (downloadButton) {
+    downloadButton.disabled = true;
+  }
+
+
   showLoading(
-    'Generating QR code...'
+    "Generating attendance QR code..."
   );
 
 
   try {
 
     const result =
-      await apiRequest(
-        'generateQR',
+      await apiCall(
+        "generateQR",
         {
-          date:
-            currentQRDate,
-
-          mode:
-            mode
+          mode: mode,
+          attendanceDate:
+            attendanceDate
         }
       );
 
 
     if (
       !result ||
-      !result.success
+      result.success !== true
     ) {
 
-      hideLoading();
-
-
-      showQRStatus(
-        '⚠️ ' +
-        (
-          result?.message ||
-          'Unable to generate QR code.'
-        )
+      throw new Error(
+        result?.message ||
+        "Unable to generate QR code."
       );
-
-
-      return;
-
     }
 
 
-    if (!result.token) {
-
-      hideLoading();
+    currentQRData = result;
 
 
-      showQRStatus(
-        '⚠️ QR token was not generated.'
-      );
-
-
-      return;
-
-    }
-
-
-    currentQRData =
-      result;
-
-    currentQRMode =
-      mode;
-
-
-    await displayQR(
-      result
-    );
+    await displayGeneratedQR(result);
 
 
     hideLoading();
 
 
-    const downloadButton =
-      document.getElementById(
-        'downloadQrButton'
-      );
+    if (status) {
 
-
-    if (downloadButton) {
-
-      downloadButton.disabled =
-        false;
-
+      status.innerHTML =
+        "<strong>" +
+        escapeHtml(
+          mode
+        ) +
+        "</strong><br>" +
+        "DAY " +
+        getDayNumber(
+          attendanceDate
+        ) +
+        " — " +
+        escapeHtml(
+          formatLongDate(
+            attendanceDate
+          )
+        ) +
+        "<br>" +
+        "QR code generated successfully.";
     }
 
 
-    showQRStatus(
-      `✅ ${mode} QR generated for ${formatDate(currentQRDate)}.`
-    );
+    if (downloadButton) {
+      downloadButton.disabled = false;
+    }
 
 
   } catch (error) {
 
     hideLoading();
 
+
     console.error(
-      'QR GENERATION ERROR:',
+      "QR generation error:",
       error
     );
 
 
-    showQRStatus(
-      '⚠️ Unable to generate QR code.'
+    if (status) {
+
+      status.textContent =
+        error.message ||
+        "Unable to generate QR code.";
+    }
+
+
+    alert(
+      error.message ||
+      "Unable to generate QR code."
     );
-
   }
-
 }
 
 
 /* =========================================================
-   QR DISPLAY
+   QR CODE LIBRARY
    ========================================================= */
 
-async function displayQR(
-  data
-) {
+function loadQRCodeLibrary() {
+
+  if (
+    typeof QRCode !== "undefined"
+  ) {
+    return Promise.resolve();
+  }
+
+
+  return new Promise(function (
+    resolve,
+    reject
+  ) {
+
+    const existing =
+      document.querySelector(
+        'script[data-inset-qrcode="true"]'
+      );
+
+
+    if (existing) {
+
+      existing.addEventListener(
+        "load",
+        function () {
+          resolve();
+        }
+      );
+
+      existing.addEventListener(
+        "error",
+        function () {
+          reject(
+            new Error(
+              "Unable to load QR code library."
+            )
+          );
+        }
+      );
+
+      return;
+    }
+
+
+    const script =
+      document.createElement("script");
+
+
+    script.src =
+      "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+
+    script.async = true;
+
+    script.dataset.insetQrcode = "true";
+
+
+    script.onload = function () {
+
+      if (
+        typeof QRCode !== "undefined"
+      ) {
+        resolve();
+      } else {
+        reject(
+          new Error(
+            "QR code library loaded incorrectly."
+          )
+        );
+      }
+    };
+
+
+    script.onerror = function () {
+
+      reject(
+        new Error(
+          "Unable to load QR code library."
+        )
+      );
+    };
+
+
+    document.head.appendChild(script);
+  });
+}
+
+
+/* =========================================================
+   DISPLAY QR
+   ========================================================= */
+
+async function displayGeneratedQR(result) {
 
   const container =
-    document.getElementById(
-      'qrContainer'
-    );
+    $("qrContainer");
 
 
   if (!container) {
@@ -2038,145 +1912,60 @@ async function displayQR(
   }
 
 
-  container.innerHTML =
-    '';
+  container.innerHTML = "";
 
 
-  if (
-    !data ||
-    !data.token
-  ) {
+  /*
+   * The backend returns the secure attendance token.
+   * The QR itself contains ONLY the secure token.
+   */
+
+  const qrValue =
+    result.token ||
+    result.qrData ||
+    result.value ||
+    result.url;
+
+
+  if (!qrValue) {
 
     throw new Error(
-      'Missing QR token.'
+      "The server did not return a QR value."
     );
-
   }
 
 
-  const qrImage =
-    document.createElement(
-      'img'
-    );
+  await loadQRCodeLibrary();
 
 
-  qrImage.id =
-    'generatedQRImage';
-
-
-  qrImage.alt =
-    'INSET 2026 Attendance QR Code';
-
-
-  qrImage.width =
-    320;
-
-  qrImage.height =
-    320;
-
-
-  qrImage.style.width =
-    '320px';
-
-  qrImage.style.height =
-    '320px';
-
-  qrImage.style.display =
-    'block';
-
-  qrImage.style.margin =
-    'auto';
-
-
-  qrImage.src =
-    'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=' +
-    encodeURIComponent(
-      data.token
-    );
-
-
-  await new Promise(
-    (resolve, reject) => {
-
-      qrImage.onload =
-        () => {
-
-          resolve();
-
-        };
-
-
-      qrImage.onerror =
-        () => {
-
-          reject(
-            new Error(
-              'Unable to create QR image.'
-            )
-          );
-
-        };
-
+  new QRCode(
+    container,
+    {
+      text: String(qrValue),
+      width: 320,
+      height: 320,
+      correctLevel:
+        QRCode.CorrectLevel.H
     }
   );
 
 
-  container.appendChild(
-    qrImage
-  );
+  /*
+   * Save the exact generated value so that
+   * the PDF generator uses the same token.
+   */
 
-}
-
-
-/* =========================================================
-   LOAD QR LIBRARY
-   ========================================================= */
-
-function loadQRCodeLibrary() {
-
-  if (
-    window.QRCode &&
-    typeof window.QRCode.toCanvas ===
-      'function'
-  ) {
-
-    return Promise.resolve();
-
-  }
-
-
-  return new Promise(
-    (resolve, reject) => {
-
-      const script =
-        document.createElement(
-          'script'
-        );
-
-
-      script.src =
-        'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js';
-
-
-      script.onload =
-        () => resolve();
-
-
-      script.onerror =
-        () => reject(
-          new Error(
-            'Unable to load QR library.'
-          )
-        );
-
-
-      document.head.appendChild(
-        script
-      );
-
+  currentQRData = Object.assign(
+    {},
+    result,
+    {
+      token:
+        result.token ||
+        result.qrData ||
+        result.value ||
+        result.url
     }
   );
-
 }
 
 
@@ -2186,119 +1975,153 @@ function loadQRCodeLibrary() {
 
 async function downloadCurrentQR() {
 
-  const image =
-    document.getElementById(
-      'generatedQRImage'
-    );
-
-
-  if (!image) {
+  if (!currentQRData) {
 
     alert(
-      'Please generate a QR code first.'
+      "Please generate a QR code first."
     );
 
     return;
-
   }
 
 
-  const link =
-    document.createElement(
-      'a'
+  const qrValue =
+    currentQRData.token ||
+    currentQRData.qrData ||
+    currentQRData.value ||
+    currentQRData.url;
+
+
+  if (!qrValue) {
+
+    alert(
+      "QR code data is unavailable."
+    );
+
+    return;
+  }
+
+
+  try {
+
+    await loadQRCodeLibrary();
+
+
+    const temporary =
+      document.createElement("div");
+
+
+    temporary.style.position =
+      "fixed";
+
+    temporary.style.left =
+      "-10000px";
+
+    temporary.style.top =
+      "-10000px";
+
+    temporary.style.width =
+      "1000px";
+
+    temporary.style.height =
+      "1000px";
+
+    temporary.style.background =
+      "#ffffff";
+
+    document.body.appendChild(
+      temporary
     );
 
 
-  link.href =
-    image.src;
+    new QRCode(
+      temporary,
+      {
+        text: String(qrValue),
+        width: 1000,
+        height: 1000,
+        correctLevel:
+          QRCode.CorrectLevel.H
+      }
+    );
 
 
-  link.download =
-    `INSET2026_${currentQRDate}_${currentQRMode}.png`;
+    await wait(500);
 
 
-  document.body.appendChild(
-    link
-  );
+    const canvas =
+      temporary.querySelector("canvas");
 
 
-  link.click();
+    if (!canvas) {
+
+      temporary.remove();
+
+      throw new Error(
+        "Unable to create QR image."
+      );
+    }
 
 
-  document.body.removeChild(
-    link
-  );
+    const link =
+      document.createElement("a");
 
+
+    const safeDate =
+      currentQRDate ||
+      EVENT_START;
+
+
+    const safeMode =
+      currentQRMode ||
+      "QR";
+
+
+    link.download =
+      "INSET2026_" +
+      "DAY" +
+      getDayNumber(
+        safeDate
+      ) +
+      "_" +
+      safeMode +
+      "_" +
+      safeDate +
+      ".png";
+
+
+    link.href =
+      canvas.toDataURL(
+        "image/png"
+      );
+
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    temporary.remove();
+
+
+  } catch (error) {
+
+    console.error(
+      "QR download error:",
+      error
+    );
+
+
+    alert(
+      "Unable to download the QR code."
+    );
+  }
 }
 
 
 /* =========================================================
-   CLEAR QR
-   ========================================================= */
-
-function clearQR() {
-
-  currentQRData =
-    null;
-
-  currentQRMode =
-    null;
-
-  currentQRDate =
-    null;
-
-
-  const date =
-    document.getElementById(
-      'attendanceDate'
-    );
-
-
-  if (date) {
-    date.value = '';
-  }
-
-
-  const status =
-    document.getElementById(
-      'qrStatus'
-    );
-
-
-  if (status) {
-    status.textContent = '';
-  }
-
-
-  const container =
-    document.getElementById(
-      'qrContainer'
-    );
-
-
-  if (container) {
-    container.innerHTML = '';
-  }
-
-
-  const download =
-    document.getElementById(
-      'downloadQrButton'
-    );
-
-
-  if (download) {
-
-    download.disabled =
-      true;
-
-  }
-
-}
-
-
-/* =========================================================
-   A4 PDF — LOAD jsPDF
+   JAVASCRIPT-PDF LIBRARY
    ========================================================= */
 
 function loadJsPDF() {
@@ -2307,54 +2130,214 @@ function loadJsPDF() {
     window.jspdf &&
     window.jspdf.jsPDF
   ) {
-
     return Promise.resolve();
-
   }
 
 
-  return new Promise(
-    (resolve, reject) => {
+  return new Promise(function (
+    resolve,
+    reject
+  ) {
 
-      const script =
-        document.createElement(
-          'script'
-        );
-
-
-      script.src =
-        'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-
-
-      script.onload =
-        () => resolve();
-
-
-      script.onerror =
-        () => reject(
-          new Error(
-            'Unable to load jsPDF.'
-          )
-        );
-
-
-      document.head.appendChild(
-        script
+    const existing =
+      document.querySelector(
+        'script[data-inset-jspdf="true"]'
       );
 
+
+    if (existing) {
+
+      existing.addEventListener(
+        "load",
+        function () {
+          resolve();
+        }
+      );
+
+      existing.addEventListener(
+        "error",
+        function () {
+          reject(
+            new Error(
+              "Unable to load PDF library."
+            )
+          );
+        }
+      );
+
+      return;
+    }
+
+
+    const script =
+      document.createElement("script");
+
+
+    script.src =
+      "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+
+    script.async = true;
+
+    script.dataset.insetJspdf =
+      "true";
+
+
+    script.onload = function () {
+
+      if (
+        window.jspdf &&
+        window.jspdf.jsPDF
+      ) {
+        resolve();
+      } else {
+        reject(
+          new Error(
+            "PDF library loaded incorrectly."
+          )
+        );
+      }
+    };
+
+
+    script.onerror = function () {
+
+      reject(
+        new Error(
+          "Unable to load PDF library."
+        )
+      );
+    };
+
+
+    document.head.appendChild(script);
+  });
+}
+
+
+/* =========================================================
+   WAIT HELPER
+   ========================================================= */
+
+function wait(milliseconds) {
+
+  return new Promise(function (resolve) {
+
+    setTimeout(
+      resolve,
+      milliseconds
+    );
+
+  });
+}
+
+
+/* =========================================================
+   CREATE HIGH-RESOLUTION QR CANVAS
+   ========================================================= */
+
+async function createQRCanvas(value) {
+
+  await loadQRCodeLibrary();
+
+
+  const wrapper =
+    document.createElement("div");
+
+
+  wrapper.style.position =
+    "fixed";
+
+  wrapper.style.left =
+    "-20000px";
+
+  wrapper.style.top =
+    "-20000px";
+
+  wrapper.style.width =
+    "1000px";
+
+  wrapper.style.height =
+    "1000px";
+
+  wrapper.style.background =
+    "#ffffff";
+
+
+  document.body.appendChild(
+    wrapper
+  );
+
+
+  new QRCode(
+    wrapper,
+    {
+      text: String(value),
+      width: 1000,
+      height: 1000,
+      correctLevel:
+        QRCode.CorrectLevel.H
     }
   );
 
+
+  await wait(400);
+
+
+  const canvas =
+    wrapper.querySelector(
+      "canvas"
+    );
+
+
+  if (!canvas) {
+
+    wrapper.remove();
+
+    throw new Error(
+      "Unable to create QR canvas."
+    );
+  }
+
+
+  const dataUrl =
+    canvas.toDataURL(
+      "image/png"
+    );
+
+
+  wrapper.remove();
+
+
+  return dataUrl;
 }
 
+
 /* =========================================================
-   DOWNLOAD ALL 6 QR CODES — A4 PDF
+   DOWNLOAD ALL SIX QR CODES — A4 PDF
    ========================================================= */
 
 async function downloadAllQRCodesPDF() {
 
+  const confirmed =
+    window.confirm(
+      "Generate the complete 6-page A4 PDF?\n\n" +
+      "Each page will contain one QR code:\n\n" +
+      "DAY 1 — TIME IN\n" +
+      "DAY 1 — TIME OUT\n" +
+      "DAY 2 — TIME IN\n" +
+      "DAY 2 — TIME OUT\n" +
+      "DAY 3 — TIME IN\n" +
+      "DAY 3 — TIME OUT"
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
   showLoading(
-    'Preparing all 6 QR codes...'
+    "Generating all 6 QR codes and A4 PDF..."
   );
 
 
@@ -2365,323 +2348,405 @@ async function downloadAllQRCodesPDF() {
     await loadJsPDF();
 
 
-    const qrList = [
-
-      {
-        date: '2026-09-09',
-        mode: 'TIME-IN'
-      },
-
-      {
-        date: '2026-09-09',
-        mode: 'TIME-OUT'
-      },
-
-      {
-        date: '2026-09-10',
-        mode: 'TIME-IN'
-      },
-
-      {
-        date: '2026-09-10',
-        mode: 'TIME-OUT'
-      },
-
-      {
-        date: '2026-09-11',
-        mode: 'TIME-IN'
-      },
-
-      {
-        date: '2026-09-11',
-        mode: 'TIME-OUT'
-      }
-
-    ];
-
-
-    const generated = [];
-
-
-    for (
-      const item of qrList
-    ) {
-
-      const result =
-        await apiRequest(
-          'generateQR',
-          {
-            date:
-              item.date,
-
-            mode:
-              item.mode
-          }
-        );
-
-
-      if (!result.success) {
-
-        throw new Error(
-          result.message ||
-          `Unable to generate ${item.mode}.`
-        );
-
-      }
-
-
-      const canvas =
-        document.createElement(
-          'canvas'
-        );
-
-
-      await new Promise(
-        (resolve, reject) => {
-
-          QRCode.toCanvas(
-            canvas,
-            result.token,
-            {
-              width: 1000,
-              margin: 2
-            },
-
-            error => {
-
-              if (error) {
-
-                reject(
-                  error
-                );
-
-              } else {
-
-                resolve();
-
-              }
-
-            }
-          );
-
-        }
-      );
-
-
-      generated.push({
-
-        ...item,
-
-        image:
-          canvas.toDataURL(
-            'image/png'
-          )
-
-      });
-
-    }
-
-
-    const {
-      jsPDF
-    } = window.jspdf;
+    const jsPDF =
+      window.jspdf.jsPDF;
 
 
     const pdf =
       new jsPDF({
-
-        orientation:
-          'portrait',
-
-        unit:
-          'mm',
-
-        format:
-          'a4'
-
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
       });
 
 
-    const pageWidth =
-      210;
-
-
-    const pageHeight =
-      297;
+    const qrList = [
+      {
+        date: "2026-09-09",
+        mode: "TIME-IN"
+      },
+      {
+        date: "2026-09-09",
+        mode: "TIME-OUT"
+      },
+      {
+        date: "2026-09-10",
+        mode: "TIME-IN"
+      },
+      {
+        date: "2026-09-10",
+        mode: "TIME-OUT"
+      },
+      {
+        date: "2026-09-11",
+        mode: "TIME-IN"
+      },
+      {
+        date: "2026-09-11",
+        mode: "TIME-OUT"
+      }
+    ];
 
 
     for (
       let i = 0;
-      i < generated.length;
+      i < qrList.length;
       i++
     ) {
 
-      if (i > 0) {
+      const item =
+        qrList[i];
 
-        pdf.addPage();
 
+      setLoadingMessage(
+        "Generating page " +
+        (i + 1) +
+        " of 6..."
+      );
+
+
+      const result =
+        await apiCall(
+          "generateQR",
+          {
+            mode:
+              item.mode,
+
+            attendanceDate:
+              item.date
+          }
+        );
+
+
+      if (
+        !result ||
+        result.success !== true
+      ) {
+
+        throw new Error(
+          result?.message ||
+          "Unable to generate QR for " +
+          item.date +
+          " " +
+          item.mode
+        );
       }
 
 
-      const item =
-        generated[i];
+      const qrValue =
+        result.token ||
+        result.qrData ||
+        result.value ||
+        result.url;
 
 
-      pdf.setFontSize(
-        26
+      if (!qrValue) {
+
+        throw new Error(
+          "QR token missing for " +
+          item.date +
+          " " +
+          item.mode
+        );
+      }
+
+
+      const qrImage =
+        await createQRCanvas(
+          qrValue
+        );
+
+
+      if (i > 0) {
+        pdf.addPage();
+      }
+
+
+      drawQRPDFPage(
+        pdf,
+        item.date,
+        item.mode,
+        qrImage
       );
-
-
-      pdf.text(
-        'INSET 2026',
-
-        pageWidth / 2,
-
-        35,
-
-        {
-          align:
-            'center'
-        }
-
-      );
-
-
-      pdf.setFontSize(
-        22
-      );
-
-
-      pdf.text(
-        `${item.mode}`,
-
-        pageWidth / 2,
-
-        52,
-
-        {
-          align:
-            'center'
-        }
-
-      );
-
-
-      pdf.setFontSize(
-        17
-      );
-
-
-      pdf.text(
-        `DAY ${Math.floor(i / 2) + 1} — ${formatDate(item.date)}`,
-
-        pageWidth / 2,
-
-        65,
-
-        {
-          align:
-            'center'
-        }
-
-      );
-
-
-      const qrSize =
-        135;
-
-
-      const qrX =
-        (pageWidth - qrSize) / 2;
-
-
-      const qrY =
-        78;
-
-
-      pdf.addImage(
-
-        item.image,
-
-        'PNG',
-
-        qrX,
-
-        qrY,
-
-        qrSize,
-
-        qrSize
-
-      );
-
-
-      pdf.setFontSize(
-        16
-      );
-
-
-      pdf.text(
-        `SCAN HERE FOR ${item.mode}`,
-
-        pageWidth / 2,
-
-        235,
-
-        {
-          align:
-            'center'
-        }
-
-      );
-
-
-      pdf.setFontSize(
-        12
-      );
-
-
-      pdf.text(
-        'INSET 2026 ATTENDANCE',
-
-        pageWidth / 2,
-
-        250,
-
-        {
-          align:
-            'center'
-        }
-
-      );
-
     }
 
 
     pdf.save(
-      'INSET2026_ATTENDANCE_QR_CODES_A4.pdf'
+      "INSET2026_ATTENDANCE_QR_CODES_A4.pdf"
     );
-
-
-    hideLoading();
 
 
   } catch (error) {
 
-    hideLoading();
-
     console.error(
+      "PDF generation error:",
       error
     );
 
 
     alert(
-      'Unable to create the A4 PDF.\n\n' +
-      error.message
+      error.message ||
+      "Unable to generate the A4 PDF."
     );
 
+
+  } finally {
+
+    hideLoading();
+  }
+}
+
+
+/* =========================================================
+   LOADING MESSAGE
+   ========================================================= */
+
+function setLoadingMessage(message) {
+
+  const overlay =
+    $("loadingOverlay");
+
+
+  if (!overlay) {
+    return;
   }
 
+
+  const messageElement =
+    overlay.querySelector(
+      ".loading-message"
+    ) ||
+    overlay.querySelector(
+      "#loadingMessage"
+    );
+
+
+  if (messageElement) {
+
+    messageElement.textContent =
+      message;
+  }
+}
+
+
+/* =========================================================
+   DRAW A4 PDF PAGE
+   ========================================================= */
+
+function drawQRPDFPage(
+  pdf,
+  dateString,
+  mode,
+  qrImage
+) {
+
+  const pageWidth = 210;
+  const pageHeight = 297;
+
+
+  const dayNumber =
+    getDayNumber(
+      dateString
+    );
+
+
+  /*
+   * Header
+   */
+
+  pdf.setFont(
+    "helvetica",
+    "bold"
+  );
+
+  pdf.setFontSize(26);
+
+  pdf.text(
+    "INSET 2026",
+    pageWidth / 2,
+    27,
+    {
+      align: "center"
+    }
+  );
+
+
+  /*
+   * Attendance mode
+   */
+
+  pdf.setFontSize(24);
+
+  pdf.text(
+    "DAY " +
+      dayNumber +
+      ": " +
+      formatMode(mode),
+    pageWidth / 2,
+    47,
+    {
+      align: "center"
+    }
+  );
+
+
+  /*
+   * Date
+   */
+
+  pdf.setFont(
+    "helvetica",
+    "normal"
+  );
+
+  pdf.setFontSize(15);
+
+  pdf.text(
+    formatLongDate(
+      dateString
+    ),
+    pageWidth / 2,
+    59,
+    {
+      align: "center"
+    }
+  );
+
+
+  /*
+   * Instruction
+   */
+
+  pdf.setFont(
+    "helvetica",
+    "bold"
+  );
+
+  pdf.setFontSize(14);
+
+  pdf.text(
+    "SCAN THIS QR CODE FOR " +
+      formatMode(mode),
+    pageWidth / 2,
+    75,
+    {
+      align: "center"
+    }
+  );
+
+
+  /*
+   * QR code
+   */
+
+  const qrSize = 150;
+
+  const qrX =
+    (pageWidth - qrSize) / 2;
+
+  const qrY = 82;
+
+
+  pdf.addImage(
+    qrImage,
+    "PNG",
+    qrX,
+    qrY,
+    qrSize,
+    qrSize
+  );
+
+
+  /*
+   * Footer
+   */
+
+  pdf.setFont(
+    "helvetica",
+    "bold"
+  );
+
+  pdf.setFontSize(13);
+
+  pdf.text(
+    "INSET 2026 ATTENDANCE",
+    pageWidth / 2,
+    249,
+    {
+      align: "center"
+    }
+  );
+
+
+  pdf.setFont(
+    "helvetica",
+    "normal"
+  );
+
+  pdf.setFontSize(11);
+
+  pdf.text(
+    "Scan the QR code using the INSET 2026 Attendance System.",
+    pageWidth / 2,
+    259,
+    {
+      align: "center"
+    }
+  );
+
+
+  pdf.setFontSize(9);
+
+  pdf.text(
+    "The attendance time is recorded by the attendance server.",
+    pageWidth / 2,
+    270,
+    {
+      align: "center"
+    }
+  );
+}
+
+
+/* =========================================================
+   CLEAR QR
+   ========================================================= */
+
+function clearQR() {
+
+  currentQRData = null;
+
+  currentQRMode = "";
+
+  currentQRDate = "";
+
+
+  const container =
+    $("qrContainer");
+
+
+  if (container) {
+    container.innerHTML = "";
+  }
+
+
+  const status =
+    $("qrStatus");
+
+
+  if (status) {
+    status.textContent =
+      "Select a day and attendance mode to generate a QR code.";
+  }
+
+
+  const button =
+    $("downloadQrButton");
+
+
+  if (button) {
+    button.disabled = true;
+  }
 }
 
 
@@ -2692,9 +2757,7 @@ async function downloadAllQRCodesPDF() {
 async function loadAttendanceSummary() {
 
   const container =
-    document.getElementById(
-      'attendanceSummary'
-    );
+    $("attendanceSummary");
 
 
   if (!container) {
@@ -2703,28 +2766,27 @@ async function loadAttendanceSummary() {
 
 
   container.innerHTML =
-    'Loading attendance summary...';
+    "<p>Loading attendance summary...</p>";
 
 
   try {
 
     const result =
-      await apiRequest(
-        'getAttendanceSummary'
+      await apiCall(
+        "getAttendanceSummary",
+        {}
       );
 
 
-    if (!result.success) {
+    if (
+      !result ||
+      result.success !== true
+    ) {
 
-      container.innerHTML =
-        `<p>${escapeHtml(
-          result.message ||
-          'Unable to load summary.'
-        )}</p>`;
-
-
-      return;
-
+      throw new Error(
+        result?.message ||
+        "Unable to load attendance summary."
+      );
     }
 
 
@@ -2736,26 +2798,30 @@ async function loadAttendanceSummary() {
   } catch (error) {
 
     console.error(
+      "Summary error:",
       error
     );
 
 
     container.innerHTML =
-      '<p>⚠️ Unable to load attendance summary.</p>';
-
+      "<p>" +
+      escapeHtml(
+        error.message ||
+        "Unable to load attendance summary."
+      ) +
+      "</p>";
   }
-
 }
 
 
-function renderAttendanceSummary(
-  result
-) {
+/* =========================================================
+   RENDER ATTENDANCE SUMMARY
+   ========================================================= */
+
+function renderAttendanceSummary(result) {
 
   const container =
-    document.getElementById(
-      'attendanceSummary'
-    );
+    $("attendanceSummary");
 
 
   if (!container) {
@@ -2763,545 +2829,755 @@ function renderAttendanceSummary(
   }
 
 
-  const rows =
-    result.rows ||
-    result.data ||
-    [];
+  const records =
+    Array.isArray(result.records)
+      ? result.records
+      : Array.isArray(result.data)
+        ? result.data
+        : [];
 
 
-  if (!rows.length) {
+  if (!records.length) {
 
     container.innerHTML =
-      '<p>No attendance records found.</p>';
+      "<p>No attendance records yet.</p>";
 
     return;
-
   }
 
 
-  let html = `
-
-    <div class="summary-table-wrapper">
-
-      <table class="summary-table">
-
-        <thead>
-
-          <tr>
-
-            <th>
-              NAME
-            </th>
-
-            <th>
-              DATE
-            </th>
-
-            <th>
-              LICENSE NO.
-            </th>
-
-            <th>
-              TIME IN
-            </th>
-
-            <th>
-              TIME OUT
-            </th>
-
-          </tr>
-
-        </thead>
+  let html = "";
 
 
-        <tbody>
-
-  `;
-
-
-  rows.forEach(
-    row => {
-
-      html += `
-
-        <tr>
-
-          <td>
-
-            ${escapeHtml(
-              row.name ||
-              formatFullName(
-                row.firstName,
-                row.middleName,
-                row.lastName
-              )
-            )}
-
-          </td>
+  html +=
+    '<div class="attendance-summary-table-wrapper">';
 
 
-          <td>
-
-            ${escapeHtml(
-              row.date ||
-              ''
-            )}
-
-          </td>
+  html +=
+    "<table class=\"attendance-summary-table\">";
 
 
-          <td>
+  html += "<thead>";
 
-            ${escapeHtml(
-              row.licenseNo ||
-              row.license ||
-              ''
-            )}
+  html += "<tr>";
 
-          </td>
+  html +=
+    "<th>NAME</th>";
 
+  html +=
+    "<th>DATE</th>";
 
-          <td>
+  html +=
+    "<th>PRC LICENSE NO.</th>";
 
-            ${escapeHtml(
-              row.timeIn ||
-              ''
-            )}
+  html +=
+    "<th>TIME IN</th>";
 
-          </td>
+  html +=
+    "<th>TIME OUT</th>";
 
+  html += "</tr>";
 
-          <td>
-
-            ${escapeHtml(
-              row.timeOut ||
-              ''
-            )}
-
-          </td>
-
-        </tr>
-
-      `;
-
-    }
-  );
+  html += "</thead>";
 
 
-  html += `
+  html += "<tbody>";
 
-        </tbody>
 
-      </table>
+  records.forEach(function (record) {
 
-    </div>
+    const name =
+      record.name ||
+      buildFullName(record);
 
-  `;
+
+    html += "<tr>";
+
+
+    html +=
+      "<td>" +
+      escapeHtml(name) +
+      "</td>";
+
+
+    html +=
+      "<td>" +
+      escapeHtml(
+        record.date ||
+        record.attendanceDate ||
+        ""
+      ) +
+      "</td>";
+
+
+    html +=
+      "<td>" +
+      escapeHtml(
+        record.licenseNo ||
+        record.license ||
+        ""
+      ) +
+      "</td>";
+
+
+    html +=
+      "<td>" +
+      escapeHtml(
+        record.timeIn ||
+        ""
+      ) +
+      "</td>";
+
+
+    html +=
+      "<td>" +
+      escapeHtml(
+        record.timeOut ||
+        ""
+      ) +
+      "</td>";
+
+
+    html += "</tr>";
+  });
+
+
+  html += "</tbody>";
+
+  html += "</table>";
+
+  html += "</div>";
 
 
   container.innerHTML =
     html;
-
 }
 
 
 /* =========================================================
-   UI HELPERS
-   ========================================================= */
-
-function updateSelectedUserDisplay() {
-
-  const element =
-    document.getElementById(
-      'selectedUserDisplay'
-    );
-
-
-  if (!element) {
-    return;
-  }
-
-
-  if (!selectedUser) {
-
-    element.innerHTML =
-      '';
-
-    return;
-
-  }
-
-
-  element.innerHTML = `
-
-    <strong>
-
-      ${escapeHtml(
-        formatUserName(
-          selectedUser
-        )
-      )}
-
-    </strong>
-
-
-    <small>
-
-      License No.:
-
-      ${escapeHtml(
-        selectedUser.licenseNo
-      )}
-
-    </small>
-
-  `;
-
-}
-
-
-function showIdentifyMessage(
-  message
-) {
-
-  const element =
-    document.getElementById(
-      'identifyMessage'
-    );
-
-
-  if (element) {
-
-    element.textContent =
-      message || '';
-
-  }
-
-}
-
-
-function setRegistrationMessage(
-  message
-) {
-
-  const element =
-    document.getElementById(
-      'registrationNote'
-    );
-
-
-  if (element) {
-
-    element.textContent =
-      message || '';
-
-  }
-
-}
-
-
-function showQRStatus(
-  message
-) {
-
-  const element =
-    document.getElementById(
-      'qrStatus'
-    );
-
-
-  if (element) {
-
-    element.textContent =
-      message || '';
-
-  }
-
-}
-
-
-/* =========================================================
-   FORMATTERS
-   ========================================================= */
-
-function formatUserName(
-  user
-) {
-
-  if (!user) {
-    return '';
-  }
-
-
-  return formatFullName(
-
-    user.firstName,
-
-    user.middleName,
-
-    user.lastName
-
-  );
-
-}
-
-
-function formatFullName(
-  firstName,
-  middleName,
-  lastName
-) {
-
-  return [
-
-    firstName,
-
-    middleName,
-
-    lastName
-
-  ]
-
-    .map(
-      value =>
-        String(
-          value || ''
-        ).trim()
-    )
-
-    .filter(
-      Boolean
-    )
-
-    .join(
-      ' '
-    );
-
-}
-
-
-function formatDate(
-  dateString
-) {
-
-  if (!dateString) {
-    return '';
-  }
-
-
-  const parts =
-    String(
-      dateString
-    ).split('-');
-
-
-  if (
-    parts.length !== 3
-  ) {
-
-    return dateString;
-
-  }
-
-
-  const date =
-    new Date(
-
-      Number(
-        parts[0]
-      ),
-
-      Number(
-        parts[1]
-      ) - 1,
-
-      Number(
-        parts[2]
-      )
-
-    );
-
-
-  return date.toLocaleDateString(
-
-    'en-US',
-
-    {
-
-      month:
-        'long',
-
-      day:
-        'numeric',
-
-      year:
-        'numeric'
-
-    }
-
-  );
-
-}
-
-
-/* =========================================================
-   NORMALIZATION
-   ========================================================= */
-
-function normalizeLicense(
-  value
-) {
-
-  return String(
-    value || ''
-  )
-
-    .trim()
-
-    .toUpperCase()
-
-    .replace(
-      /\s+/g,
-      ''
-    );
-
-}
-
-
-/* =========================================================
-   GET VALUE
-   ========================================================= */
-
-function getValue(
-  id
-) {
-
-  const element =
-    document.getElementById(
-      id
-    );
-
-
-  if (!element) {
-    return '';
-  }
-
-
-  return String(
-    element.value || ''
-  ).trim();
-
-}
-
-
-/* =========================================================
-   CLEAR REGISTRATION FORM
-   ========================================================= */
-
-function clearRegistrationForm() {
-
-  [
-
-    'firstName',
-
-    'middleName',
-
-    'lastName',
-
-    'registrationLicense'
-
-  ].forEach(
-    id => {
-
-      const element =
-        document.getElementById(
-          id
-        );
-
-
-      if (element) {
-
-        element.value =
-          '';
-
-      }
-
-    }
-  );
-
-
-  const note =
-    document.getElementById(
-      'registrationNote'
-    );
-
-
-  if (note) {
-
-    note.textContent =
-      '';
-
-  }
-
-}
-
-
-/* =========================================================
-   ESCAPE HTML
-   ========================================================= */
-
-function escapeHtml(
-  value
-) {
-
-  return String(
-    value ?? ''
-  )
-
-    .replace(
-      /&/g,
-      '&amp;'
-    )
-
-    .replace(
-      /</g,
-      '&lt;'
-    )
-
-    .replace(
-      />/g,
-      '&gt;'
-    )
-
-    .replace(
-      /"/g,
-      '&quot;'
-    )
-
-    .replace(
-      /'/g,
-      '&#039;'
-    );
-
-}
-
-
-/* =========================================================
-   INITIALIZE
+   KEYBOARD SUPPORT
    ========================================================= */
 
 document.addEventListener(
-  'DOMContentLoaded',
-  () => {
+  "keydown",
+  function (event) {
 
-    html5QrCode =
-      null;
+    /*
+     * Admin login with Enter.
+     */
 
-    selectedUser =
-      null;
+    if (
+      event.key === "Enter" &&
+      $("adminLoginPage") &&
+      $("adminLoginPage").style.display !== "none"
+    ) {
 
-    qrAlreadyProcessed =
-      false;
+      const active =
+        document.activeElement;
+
+
+      if (
+        active &&
+        active.id === "adminPassword"
+      ) {
+
+        event.preventDefault();
+
+        adminLogin();
+      }
+    }
 
   }
 );
+
+
+/* =========================================================
+   INITIALIZATION
+   ========================================================= */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function () {
+
+   /*
+ * Check maintenance mode before
+ * showing the normal home page.
+ */
+
+checkSystemMaintenance();
+
+
+    /*
+     * Hide loading overlay.
+     */
+
+    hideLoading();
+
+
+    /*
+     * Disable QR download button
+     * until a QR is generated.
+     */
+
+    const downloadButton =
+      $("downloadQrButton");
+
+
+    if (downloadButton) {
+      downloadButton.disabled = true;
+    }
+
+
+    /*
+     * Set default attendance date.
+     */
+
+    const dateInput =
+      $("attendanceDate");
+
+
+    if (dateInput) {
+
+      dateInput.value =
+        EVENT_START;
+
+      currentQRDate =
+        EVENT_START;
+    }
+
+
+    /*
+     * Prevent browser from restoring
+     * an old form state.
+     */
+
+    document.querySelectorAll(
+      "input"
+    ).forEach(function (input) {
+
+      input.setAttribute(
+        "autocomplete",
+        "off"
+      );
+
+    });
+
+  }
+);
+
+/* =========================================================
+   OPEN QR IMAGE PICKER
+   ========================================================= */
+
+function openQRImagePicker() {
+  const input = document.getElementById("qrImageUpload");
+
+  if (!input) {
+    console.error(
+      "QR image upload input was not found."
+    );
+    return;
+  }
+
+  /*
+   * Reset the input first so the same image can
+   * be selected again if needed.
+   */
+  input.value = "";
+
+  /*
+   * Open the device's native file/image picker.
+   */
+  input.click();
+}
+/* =========================================================
+   EXPOSE FUNCTIONS TO HTML
+   ========================================================= */
+
+window.startAttendance =
+  startAttendance;
+
+window.openRegistration =
+  openRegistration;
+
+window.submitRegistration =
+  submitRegistration;
+
+window.chooseRegisteredUser =
+  chooseRegisteredUser;
+
+window.confirmSelectedUser =
+  confirmSelectedUser;
+
+window.startScanner =
+  startScanner;
+
+window.stopScanner =
+  stopScanner;
+
+window.handleQRCode =
+  handleQRCode;
+
+window.returnHome =
+  returnHome;
+
+window.openAdminLogin =
+  openAdminLogin;
+
+window.adminLogin =
+  adminLogin;
+
+window.openAdminPage =
+  openAdminPage;
+
+window.logoutAdmin =
+  logoutAdmin;
+
+window.selectQRDay =
+  selectQRDay;
+
+window.generateQR =
+  generateQR;
+
+window.downloadCurrentQR =
+  downloadCurrentQR;
+
+window.downloadAllQRCodesPDF =
+  downloadAllQRCodesPDF;
+
+window.clearQR =
+  clearQR;
+
+window.loadAttendanceSummary =
+  loadAttendanceSummary;
+
+
+/* =========================================================
+   END OF FINAL app.js
+   ========================================================= */
+/* =========================================================
+   UPLOAD QR CODE — IMAGE SCANNING
+   ========================================================= */
+
+async function handleQRImageUpload(event) {
+
+  const input = event.target;
+
+  if (
+    !input ||
+    !input.files ||
+    !input.files.length
+  ) {
+    return;
+  }
+
+
+  const file = input.files[0];
+
+
+  if (!file.type.startsWith("image/")) {
+
+    setUploadQRStatus(
+      "Please select an image file containing a QR code."
+    );
+
+    input.value = "";
+
+    return;
+  }
+
+
+  if (!currentParticipant) {
+
+    setUploadQRStatus(
+      "Please select a participant first."
+    );
+
+    input.value = "";
+
+    return;
+  }
+
+
+  setUploadQRStatus(
+    "Reading QR code from image..."
+  );
+
+
+  showLoading(
+    "Reading QR code..."
+  );
+
+
+  let imageScanner = null;
+
+
+  try {
+
+    /*
+     * Make sure Html5Qrcode is available.
+     */
+
+    if (
+      typeof Html5Qrcode === "undefined"
+    ) {
+
+      await waitForScannerLibrary();
+
+    }
+
+
+    if (
+      typeof Html5Qrcode === "undefined"
+    ) {
+
+      throw new Error(
+        "QR scanner library is unavailable."
+      );
+    }
+
+
+    /*
+     * Create a temporary scanner element.
+     */
+
+    const tempId =
+      "qr-upload-reader-" +
+      Date.now();
+
+
+    const tempReader =
+      document.createElement("div");
+
+
+    tempReader.id =
+      tempId;
+
+
+    tempReader.style.position =
+      "fixed";
+
+    tempReader.style.left =
+      "-20000px";
+
+    tempReader.style.top =
+      "-20000px";
+
+    tempReader.style.width =
+      "100px";
+
+    tempReader.style.height =
+      "100px";
+
+
+    document.body.appendChild(
+      tempReader
+    );
+
+
+    /*
+     * Create QR decoder.
+     */
+
+    imageScanner =
+      new Html5Qrcode(
+        tempId
+      );
+
+
+    /*
+     * Decode the uploaded image.
+     */
+
+    const decodedText =
+      await imageScanner.scanFile(
+        file,
+        true
+      );
+
+
+    /*
+     * Remove temporary scanner.
+     */
+
+    try {
+
+      imageScanner.clear();
+
+    } catch (clearError) {
+
+      console.warn(
+        "Temporary scanner cleanup warning:",
+        clearError
+      );
+
+    }
+
+
+    if (
+      tempReader.parentNode
+    ) {
+
+      tempReader.parentNode.removeChild(
+        tempReader
+      );
+    }
+
+
+    hideLoading();
+
+
+    /*
+     * Make sure something was decoded.
+     */
+
+    const token =
+      String(
+        decodedText || ""
+      ).trim();
+
+
+    if (!token) {
+
+      throw new Error(
+        "No QR code was found in the selected image."
+      );
+    }
+
+
+    setUploadQRStatus(
+      "QR code detected. Verifying attendance..."
+    );
+
+
+    /*
+     * IMPORTANT:
+     *
+     * Use the EXACT SAME attendance
+     * processing as the camera scanner.
+     */
+
+    await processDecodedAttendanceToken(
+      token
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Uploaded QR decoding error:",
+      error
+    );
+
+
+    hideLoading();
+
+
+    if (
+      error &&
+      error.message &&
+      error.message.toLowerCase().includes("qr")
+    ) {
+
+      setUploadQRStatus(
+        error.message
+      );
+
+    } else {
+
+      setUploadQRStatus(
+        "No valid QR code was found in that image."
+      );
+    }
+
+
+    alert(
+      "Unable to read the QR code from the selected image.\n\n" +
+      "Please choose a clear photo or screenshot of the official attendance QR code."
+    );
+
+
+  } finally {
+
+    /*
+     * Reset file input so the same image
+     * can be selected again if necessary.
+     */
+
+    input.value = "";
+
+
+    /*
+     * Make sure temporary scanner is cleaned up.
+     */
+
+    if (imageScanner) {
+
+      try {
+        imageScanner.clear();
+      } catch (e) {
+        // Ignore cleanup error.
+      }
+    }
+
+
+    const tempElement =
+      document.querySelector(
+        '[id^="qr-upload-reader-"]'
+      );
+
+
+    if (
+      tempElement &&
+      tempElement.parentNode
+    ) {
+
+      tempElement.parentNode.removeChild(
+        tempElement
+      );
+    }
+  }
+}
+
+
+/* =========================================================
+   PROCESS DECODED TOKEN
+   ========================================================= */
+
+async function processDecodedAttendanceToken(
+  token
+) {
+
+  if (scannerProcessing) {
+    return;
+  }
+
+
+  scannerProcessing = true;
+
+
+  if (!currentParticipant) {
+
+    scannerProcessing = false;
+
+    showError(
+      "No participant has been selected."
+    );
+
+    return;
+  }
+
+
+  showLoading(
+    "Checking attendance QR code..."
+  );
+
+
+  try {
+
+    const result =
+      await apiCall(
+        "recordAttendance",
+        {
+          token: token,
+
+          licenseNo:
+            currentParticipant.licenseNo
+        }
+      );
+
+
+    hideLoading();
+
+
+    if (
+      result &&
+      result.success === true
+    ) {
+
+      setUploadQRStatus(
+        "Attendance recorded successfully."
+      );
+
+
+      showAttendanceSuccess(
+        result
+      );
+
+
+    } else {
+
+      scannerProcessing = false;
+
+
+      const message =
+        result?.message ||
+        "Attendance could not be recorded.";
+
+
+      setUploadQRStatus(
+        message
+      );
+
+
+      showError(
+        message
+      );
+    }
+
+
+  } catch (error) {
+
+    hideLoading();
+
+
+    scannerProcessing = false;
+
+
+    console.error(
+      "Uploaded QR attendance error:",
+      error
+    );
+
+
+    setUploadQRStatus(
+      "Unable to connect to the attendance server."
+    );
+
+
+    showError(
+      "Unable to connect to the attendance server."
+    );
+  }
+}
+
+
+/* =========================================================
+   UPLOAD STATUS
+   ========================================================= */
+
+function setUploadQRStatus(message) {
+
+  const status =
+    document.getElementById(
+      "uploadQRStatus"
+    );
+
+
+  if (status) {
+
+    status.textContent =
+      message || "";
+
+  }
+}
+
+
+/* =========================================================
+   MAKE UPLOAD FUNCTION AVAILABLE TO HTML
+   ========================================================= */
+window.handleQRImageUpload =
+  handleQRImageUpload;
+
+window.openQRImagePicker =
+  openQRImagePicker;
