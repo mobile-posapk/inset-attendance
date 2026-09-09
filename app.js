@@ -744,84 +744,193 @@ function clearRegistrationForm() {
    USER SELECTION
    ========================================================= */
 
-function showUserSelection(users) {
+function showUserSelection() {
 
-  const page = $("identifyPage");
+  stopScanner();
 
-  if (!page) {
+  currentParticipant = null;
+  selectedUserIndex = null;
+
+  const list =
+    document.getElementById("registeredUsers");
+
+  if (!list) {
+    console.error(
+      "registeredUsers element was not found."
+    );
     return;
   }
 
+  const users =
+    getRegisteredUsers();
 
-  let container =
-    $("registeredUsersList");
+  list.innerHTML = "";
 
+  if (users.length === 0) {
 
-  if (!container) {
+    list.innerHTML = `
+      <div class="no-users-message">
+        <strong>No registered users</strong>
+        <p>Please register first.</p>
+      </div>
+    `;
 
-    container = document.createElement("div");
-
-    container.id = "registeredUsersList";
-
-    container.className =
-      "registered-users-list";
-
-    const existing =
-      page.querySelector(".page-content") ||
-      page.querySelector(".card") ||
-      page;
-
-    existing.appendChild(container);
+    showPage("identifyPage");
+    return;
   }
 
+  users.forEach(function(user, index) {
 
-  let html = "";
+    const wrapper =
+      document.createElement("div");
 
-  html +=
-    '<div class="user-selection-heading">' +
-      "<h2>Select Participant</h2>" +
-      "<p>Who is attending?</p>" +
-    "</div>";
+    wrapper.style.display = "flex";
+    wrapper.style.gap = "8px";
+    wrapper.style.marginBottom = "10px";
+    wrapper.style.alignItems = "stretch";
+
+    const selectButton =
+      document.createElement("button");
+
+    selectButton.type = "button";
+    selectButton.className =
+      "registered-user-option";
+
+    selectButton.style.flex = "1";
+
+    selectButton.innerHTML = `
+      <span class="user-radio">○</span>
+
+      <span class="registered-user-info">
+
+        <strong class="registered-user-name">
+          ${escapeHTML(
+            getParticipantFullName(user)
+          )}
+        </strong>
+
+        <small class="registered-user-license">
+          License No.
+          ${escapeHTML(
+            maskLicense(user.licenseNo)
+          )}
+        </small>
+
+      </span>
+    `;
+
+    selectButton.addEventListener(
+      "click",
+      function() {
+
+        chooseRegisteredUser(index);
+
+      }
+    );
 
 
-  users.forEach(function (user, index) {
+    // ==========================================
+    // REMOVE BUTTON
+    // ==========================================
 
-    const fullName =
-      buildFullName(user);
+    const removeButton =
+      document.createElement("button");
+
+    removeButton.type = "button";
+
+    removeButton.textContent =
+      "REMOVE";
+
+    removeButton.style.width = "90px";
+    removeButton.style.minWidth = "90px";
+    removeButton.style.border = "none";
+    removeButton.style.borderRadius = "12px";
+    removeButton.style.background = "#dc3545";
+    removeButton.style.color = "#ffffff";
+    removeButton.style.fontWeight = "700";
+    removeButton.style.cursor = "pointer";
+
+    removeButton.addEventListener(
+      "click",
+      function(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const name =
+          getParticipantFullName(user);
+
+        const confirmed =
+          window.confirm(
+            "REMOVE THIS ACCOUNT FROM THIS DEVICE?\n\n" +
+            name +
+            "\n\n" +
+            "This will NOT delete the participant " +
+            "or attendance records from the school database."
+          );
+
+        if (!confirmed) {
+          return;
+        }
+
+        removeRegisteredUser(
+          user.licenseNo
+        );
+
+        currentParticipant = null;
+        selectedUserIndex = null;
+
+        showUserSelection();
+
+      }
+    );
 
 
-    html +=
-      '<button type="button" ' +
-      'class="registered-user-button" ' +
-      'onclick="chooseRegisteredUser(' +
-      index +
-      ')">' +
+    wrapper.appendChild(
+      selectButton
+    );
 
-        '<span class="registered-user-name">' +
-          escapeHtml(fullName) +
-        "</span>" +
+    wrapper.appendChild(
+      removeButton
+    );
 
-        '<span class="registered-user-license">' +
-          "PRC License No.: " +
-          escapeHtml(user.licenseNo) +
-        "</span>" +
-
-      "</button>";
+    list.appendChild(
+      wrapper
+    );
 
   });
 
 
-  html +=
-    '<button type="button" ' +
-    'class="secondary-button" ' +
-    'onclick="openRegistration()">' +
-      "➕ Register Another User" +
-    "</button>";
+  // ==========================================
+  // REGISTER ANOTHER USER
+  // ==========================================
+
+  const registerButton =
+    document.createElement("button");
+
+  registerButton.type = "button";
+  registerButton.className =
+    "secondary-button";
+
+  registerButton.textContent =
+    "➕ Register Another User";
+
+  registerButton.addEventListener(
+    "click",
+    function() {
+      openRegistration();
+    }
+  );
+
+  list.appendChild(
+    registerButton
+  );
 
 
-  container.innerHTML = html;
+  showPage(
+    "identifyPage"
+  );
 
-  showPage("identifyPage");
 }
 
 
