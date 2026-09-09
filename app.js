@@ -2723,10 +2723,17 @@ function apiCall(
         );
 
 
+      /*
+       * =====================================================
+       * PRIMARY CONNECTION
+       *
+       * Keep the existing API request as the first method.
+       * =====================================================
+       */
+
       fetch(
         url,
         {
-
           method:
             "GET",
 
@@ -2734,8 +2741,10 @@ function apiCall(
             "follow",
 
           cache:
-            "no-store"
+            "no-store",
 
+          credentials:
+            "omit"
         }
       )
 
@@ -2808,15 +2817,192 @@ function apiCall(
       .catch(
         function(error) {
 
-          console.error(
-            "API ERROR:",
+          console.warn(
+            "PRIMARY API CONNECTION FAILED:",
             action,
             error
           );
 
 
-          reject(
-            error
+          /*
+           * =================================================
+           * FALLBACK CONNECTION
+           *
+           * Used only if the normal fetch request fails.
+           * =================================================
+           */
+
+          const callbackName =
+            "insetAttendanceCallback_" +
+            Date.now() +
+            "_" +
+            Math.floor(
+              Math.random() * 100000
+            );
+
+
+          const script =
+            document.createElement(
+              "script"
+            );
+
+
+          let completed =
+            false;
+
+
+          const timeout =
+            setTimeout(
+              function() {
+
+                if (completed) {
+                  return;
+                }
+
+
+                completed =
+                  true;
+
+
+                cleanup();
+
+
+                reject(
+                  new Error(
+                    "Unable to connect to the attendance server."
+                  )
+                );
+
+              },
+              15000
+            );
+
+
+          function cleanup() {
+
+            clearTimeout(
+              timeout
+            );
+
+
+            if (
+              script &&
+              script.parentNode
+            ) {
+
+              script.parentNode.removeChild(
+                script
+              );
+
+            }
+
+
+            try {
+
+              delete window[
+                callbackName
+              ];
+
+            }
+
+            catch (cleanupError) {
+
+              window[
+                callbackName
+              ] =
+                undefined;
+
+            }
+
+          }
+
+
+          window[
+            callbackName
+          ] =
+            function(result) {
+
+              if (completed) {
+                return;
+              }
+
+
+              completed =
+                true;
+
+
+              cleanup();
+
+
+              if (
+                result === undefined ||
+                result === null
+              ) {
+
+                reject(
+                  new Error(
+                    "Empty response from attendance server."
+                  )
+                );
+
+                return;
+
+              }
+
+
+              resolve(
+                result
+              );
+
+            };
+
+
+          /*
+           * IMPORTANT:
+           *
+           * The backend receives the same
+           * action/data parameters plus
+           * the JSONP callback name.
+           */
+
+          script.src =
+            url +
+            "&callback=" +
+            encodeURIComponent(
+              callbackName
+            );
+
+
+          script.async =
+            true;
+
+
+          script.onerror =
+            function() {
+
+              if (completed) {
+                return;
+              }
+
+
+              completed =
+                true;
+
+
+              cleanup();
+
+
+              reject(
+                new Error(
+                  "Unable to connect to the attendance server."
+                )
+              );
+
+            };
+
+
+          document.head.appendChild(
+            script
           );
 
         }
