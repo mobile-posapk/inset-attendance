@@ -789,9 +789,7 @@ function stopScanner() {
    PROCESS QR CODE
    ========================================================= */
 
-function processQRCode(
-  qrText
-) {
+function processQRCode(qrText) {
 
   /*
    * Participant must be identified.
@@ -802,23 +800,95 @@ function processQRCode(
     !currentParticipant.licenseNo
   ) {
 
-    scannerProcessing =
-      false;
-
+    scannerProcessing = false;
 
     showError(
       "Participant identification is missing. Please start again."
     );
 
-
     return;
+  }
+
+
+  /*
+   * Extract the token from the QR code.
+   *
+   * The QR may contain either:
+   *
+   * 1. A full URL:
+   *    https://.../?token=ABC123
+   *
+   * OR
+   *
+   * 2. A raw token:
+   *    ABC123
+   */
+
+  let token = qrText.trim();
+
+
+  try {
+
+    const scannedURL =
+      new URL(qrText);
+
+
+    const urlToken =
+      scannedURL.searchParams.get(
+        "token"
+      );
+
+
+    if (urlToken) {
+
+      token =
+        urlToken;
+
+    }
+
+  }
+
+  catch (error) {
+
+    /*
+     * QR is not a URL.
+     * Treat the scanned text as
+     * the token itself.
+     */
 
   }
 
 
-  showLoading(
-    true
+  /*
+   * Make sure we actually have
+   * a token.
+   */
+
+  if (!token) {
+
+    scannerProcessing = false;
+
+    showError(
+      "Invalid QR code. No attendance token was found."
+    );
+
+    return;
+  }
+
+
+  console.log(
+    "QR TEXT:",
+    qrText
   );
+
+
+  console.log(
+    "EXTRACTED TOKEN:",
+    token
+  );
+
+
+  showLoading(true);
 
 
   apiCall(
@@ -826,7 +896,7 @@ function processQRCode(
     {
 
       token:
-        qrText,
+        token,
 
       licenseNo:
         currentParticipant.licenseNo
@@ -837,12 +907,7 @@ function processQRCode(
   .then(
     function(result) {
 
-      showLoading(
-        false
-      );
-
-
-      stopScanner();
+      showLoading(false);
 
 
       if (
@@ -860,6 +925,9 @@ function processQRCode(
       }
 
 
+      stopScanner();
+
+
       showSuccess(
         result
       );
@@ -870,13 +938,10 @@ function processQRCode(
   .catch(
     function(error) {
 
-      showLoading(
-        false
-      );
+      showLoading(false);
 
 
-      scannerProcessing =
-        false;
+      scannerProcessing = false;
 
 
       showError(
