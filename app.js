@@ -2777,12 +2777,12 @@ document.addEventListener(
   "DOMContentLoaded",
   function () {
 
-    /*
-     * Make sure the home page is visible
-     * when the application starts.
-     */
+   /*
+ * Check maintenance mode before
+ * showing the normal home page.
+ */
 
-    showPage("homePage");
+checkSystemMaintenance();
 
 
     /*
