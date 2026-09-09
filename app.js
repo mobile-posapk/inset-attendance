@@ -1168,31 +1168,20 @@ function setAdminDefaults() {
     );
 
 
-  const timeInput =
-    document.getElementById(
-      "attendanceTime"
-    );
+  /*
+   * Default attendance date.
+   */
 
-
-  if (!dateInput.value) {
+  if (
+    !dateInput.value
+  ) {
 
     dateInput.value =
       EVENT_START;
 
   }
 
-
-  if (!timeInput.value) {
-
-    timeInput.value =
-      "08:00";
-
-  }
-
-}
-
-
-/* =========================================================
+}/* =========================================================
    GENERATE QR
    ========================================================= */
 
