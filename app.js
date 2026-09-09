@@ -2798,7 +2798,31 @@ document.addEventListener(
   }
 );
 
+/* =========================================================
+   OPEN QR IMAGE PICKER
+   ========================================================= */
 
+function openQRImagePicker() {
+  const input = document.getElementById("qrImageUpload");
+
+  if (!input) {
+    console.error(
+      "QR image upload input was not found."
+    );
+    return;
+  }
+
+  /*
+   * Reset the input first so the same image can
+   * be selected again if needed.
+   */
+  input.value = "";
+
+  /*
+   * Open the device's native file/image picker.
+   */
+  input.click();
+}
 /* =========================================================
    EXPOSE FUNCTIONS TO HTML
    ========================================================= */
@@ -3285,6 +3309,8 @@ function setUploadQRStatus(message) {
 /* =========================================================
    MAKE UPLOAD FUNCTION AVAILABLE TO HTML
    ========================================================= */
-
 window.handleQRImageUpload =
   handleQRImageUpload;
+
+window.openQRImagePicker =
+  openQRImagePicker;
