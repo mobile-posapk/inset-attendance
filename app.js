@@ -437,7 +437,7 @@ function startAttendance() {
 
   if (!users.length) {
     openRegistration(
-      "Please register your name and License No. first."
+      "PRC ACCREDITATION"
     );
     return;
   }
@@ -513,7 +513,7 @@ async function submitRegistration() {
   }
 
   if (!licenseNo) {
-    alert("Please enter your License No.");
+    alert("Please enter your PRC License No.");
     $("registrationLicense")?.focus();
     return;
   }
@@ -693,7 +693,7 @@ function showUserSelection(users) {
         "</span>" +
 
         '<span class="registered-user-license">' +
-          "License No.: " +
+          "PRC License No.: " +
           escapeHtml(user.licenseNo) +
         "</span>" +
 
@@ -764,7 +764,7 @@ function confirmSelectedUser() {
   let message =
     "You are attending as:\n\n" +
     fullName +
-    "\n\nLicense No.: " +
+    "\n\nPRC License No.: " +
     participant.licenseNo +
     "\n\nContinue to QR scanner?";
 
@@ -1133,7 +1133,7 @@ function showAttendanceSuccess(result) {
   if (participant.licenseNo) {
 
     details +=
-      "License No.: " +
+      "PRC License No.: " +
       escapeHtml(
         participant.licenseNo
       ) +
@@ -2653,7 +2653,7 @@ function renderAttendanceSummary(result) {
     "<th>DATE</th>";
 
   html +=
-    "<th>LICENSE NO.</th>";
+    "<th>PRC LICENSE NO.</th>";
 
   html +=
     "<th>TIME IN</th>";
