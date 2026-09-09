@@ -12,6 +12,51 @@
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9emBZvJ_wsEi1CqABGV5-g0jIcZ0Ji7TqNOccygIlIflF3w/exec";
 
+/* =========================================================
+   MAINTENANCE MODE
+   ========================================================= */
+
+async function checkSystemMaintenance() {
+
+  try {
+
+    const result =
+      await apiCall(
+        "getSystemStatus",
+        {}
+      );
+
+    if (
+      result &&
+      result.maintenance === true
+    ) {
+
+      showPage("maintenancePage");
+
+      return true;
+    }
+
+    showPage("homePage");
+
+    return false;
+
+  } catch (error) {
+
+    console.error(
+      "Maintenance status check failed:",
+      error
+    );
+
+    /*
+     * If the status cannot be checked,
+     * keep the normal system available.
+     */
+    showPage("homePage");
+
+    return false;
+  }
+}
+
 const EVENT_START = "2026-09-09";
 const EVENT_END   = "2026-09-11";
 
