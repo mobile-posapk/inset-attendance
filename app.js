@@ -2916,3 +2916,427 @@ window.loadAttendanceSummary =
 /* =========================================================
    END OF FINAL app.js
    ========================================================= */
+/* =========================================================
+   UPLOAD QR CODE — IMAGE SCANNING
+   ========================================================= */
+
+async function handleQRImageUpload(event) {
+
+  const input = event.target;
+
+  if (
+    !input ||
+    !input.files ||
+    !input.files.length
+  ) {
+    return;
+  }
+
+
+  const file = input.files[0];
+
+
+  if (!file.type.startsWith("image/")) {
+
+    setUploadQRStatus(
+      "Please select an image file containing a QR code."
+    );
+
+    input.value = "";
+
+    return;
+  }
+
+
+  if (!currentParticipant) {
+
+    setUploadQRStatus(
+      "Please select a participant first."
+    );
+
+    input.value = "";
+
+    return;
+  }
+
+
+  setUploadQRStatus(
+    "Reading QR code from image..."
+  );
+
+
+  showLoading(
+    "Reading QR code..."
+  );
+
+
+  let imageScanner = null;
+
+
+  try {
+
+    /*
+     * Make sure Html5Qrcode is available.
+     */
+
+    if (
+      typeof Html5Qrcode === "undefined"
+    ) {
+
+      await waitForScannerLibrary();
+
+    }
+
+
+    if (
+      typeof Html5Qrcode === "undefined"
+    ) {
+
+      throw new Error(
+        "QR scanner library is unavailable."
+      );
+    }
+
+
+    /*
+     * Create a temporary scanner element.
+     */
+
+    const tempId =
+      "qr-upload-reader-" +
+      Date.now();
+
+
+    const tempReader =
+      document.createElement("div");
+
+
+    tempReader.id =
+      tempId;
+
+
+    tempReader.style.position =
+      "fixed";
+
+    tempReader.style.left =
+      "-20000px";
+
+    tempReader.style.top =
+      "-20000px";
+
+    tempReader.style.width =
+      "100px";
+
+    tempReader.style.height =
+      "100px";
+
+
+    document.body.appendChild(
+      tempReader
+    );
+
+
+    /*
+     * Create QR decoder.
+     */
+
+    imageScanner =
+      new Html5Qrcode(
+        tempId
+      );
+
+
+    /*
+     * Decode the uploaded image.
+     */
+
+    const decodedText =
+      await imageScanner.scanFile(
+        file,
+        true
+      );
+
+
+    /*
+     * Remove temporary scanner.
+     */
+
+    try {
+
+      imageScanner.clear();
+
+    } catch (clearError) {
+
+      console.warn(
+        "Temporary scanner cleanup warning:",
+        clearError
+      );
+
+    }
+
+
+    if (
+      tempReader.parentNode
+    ) {
+
+      tempReader.parentNode.removeChild(
+        tempReader
+      );
+    }
+
+
+    hideLoading();
+
+
+    /*
+     * Make sure something was decoded.
+     */
+
+    const token =
+      String(
+        decodedText || ""
+      ).trim();
+
+
+    if (!token) {
+
+      throw new Error(
+        "No QR code was found in the selected image."
+      );
+    }
+
+
+    setUploadQRStatus(
+      "QR code detected. Verifying attendance..."
+    );
+
+
+    /*
+     * IMPORTANT:
+     *
+     * Use the EXACT SAME attendance
+     * processing as the camera scanner.
+     */
+
+    await processDecodedAttendanceToken(
+      token
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Uploaded QR decoding error:",
+      error
+    );
+
+
+    hideLoading();
+
+
+    if (
+      error &&
+      error.message &&
+      error.message.toLowerCase().includes("qr")
+    ) {
+
+      setUploadQRStatus(
+        error.message
+      );
+
+    } else {
+
+      setUploadQRStatus(
+        "No valid QR code was found in that image."
+      );
+    }
+
+
+    alert(
+      "Unable to read the QR code from the selected image.\n\n" +
+      "Please choose a clear photo or screenshot of the official attendance QR code."
+    );
+
+
+  } finally {
+
+    /*
+     * Reset file input so the same image
+     * can be selected again if necessary.
+     */
+
+    input.value = "";
+
+
+    /*
+     * Make sure temporary scanner is cleaned up.
+     */
+
+    if (imageScanner) {
+
+      try {
+        imageScanner.clear();
+      } catch (e) {
+        // Ignore cleanup error.
+      }
+    }
+
+
+    const tempElement =
+      document.querySelector(
+        '[id^="qr-upload-reader-"]'
+      );
+
+
+    if (
+      tempElement &&
+      tempElement.parentNode
+    ) {
+
+      tempElement.parentNode.removeChild(
+        tempElement
+      );
+    }
+  }
+}
+
+
+/* =========================================================
+   PROCESS DECODED TOKEN
+   ========================================================= */
+
+async function processDecodedAttendanceToken(
+  token
+) {
+
+  if (scannerProcessing) {
+    return;
+  }
+
+
+  scannerProcessing = true;
+
+
+  if (!currentParticipant) {
+
+    scannerProcessing = false;
+
+    showError(
+      "No participant has been selected."
+    );
+
+    return;
+  }
+
+
+  showLoading(
+    "Checking attendance QR code..."
+  );
+
+
+  try {
+
+    const result =
+      await apiCall(
+        "recordAttendance",
+        {
+          token: token,
+
+          licenseNo:
+            currentParticipant.licenseNo
+        }
+      );
+
+
+    hideLoading();
+
+
+    if (
+      result &&
+      result.success === true
+    ) {
+
+      setUploadQRStatus(
+        "Attendance recorded successfully."
+      );
+
+
+      showAttendanceSuccess(
+        result
+      );
+
+
+    } else {
+
+      scannerProcessing = false;
+
+
+      const message =
+        result?.message ||
+        "Attendance could not be recorded.";
+
+
+      setUploadQRStatus(
+        message
+      );
+
+
+      showError(
+        message
+      );
+    }
+
+
+  } catch (error) {
+
+    hideLoading();
+
+
+    scannerProcessing = false;
+
+
+    console.error(
+      "Uploaded QR attendance error:",
+      error
+    );
+
+
+    setUploadQRStatus(
+      "Unable to connect to the attendance server."
+    );
+
+
+    showError(
+      "Unable to connect to the attendance server."
+    );
+  }
+}
+
+
+/* =========================================================
+   UPLOAD STATUS
+   ========================================================= */
+
+function setUploadQRStatus(message) {
+
+  const status =
+    document.getElementById(
+      "uploadQRStatus"
+    );
+
+
+  if (status) {
+
+    status.textContent =
+      message || "";
+
+  }
+}
+
+
+/* =========================================================
+   MAKE UPLOAD FUNCTION AVAILABLE TO HTML
+   ========================================================= */
+
+window.handleQRImageUpload =
+  handleQRImageUpload;
