@@ -1010,16 +1010,13 @@ async function handleQRCode(decodedText) {
   }
 
 
-  scannerProcessing = true;
-
-
   const token =
-    String(decodedText || "").trim();
+    String(
+      decodedText || ""
+    ).trim();
 
 
   if (!token) {
-
-    scannerProcessing = false;
     return;
   }
 
@@ -1044,65 +1041,16 @@ async function handleQRCode(decodedText) {
 
 
     currentParticipant = {
-      licenseNo: savedLicense
+      licenseNo:
+        savedLicense
     };
   }
 
 
-  showLoading(
-    "Checking attendance QR code..."
+  await processDecodedAttendanceToken(
+    token
   );
-
-
-  try {
-
-    const result =
-      await apiCall(
-        "recordAttendance",
-        {
-          token: token,
-          licenseNo:
-            currentParticipant.licenseNo
-        }
-      );
-
-
-    hideLoading();
-
-
-    if (
-      result &&
-      result.success === true
-    ) {
-
-      showAttendanceSuccess(result);
-
-    } else {
-
-      showError(
-        result?.message ||
-        "Attendance could not be recorded."
-      );
-    }
-
-
-  } catch (error) {
-
-    hideLoading();
-
-
-    console.error(
-      "Attendance error:",
-      error
-    );
-
-
-    showError(
-      "Unable to connect to the attendance server."
-    );
-  }
 }
-
 
 /* =========================================================
    SUCCESS PAGE
