@@ -409,6 +409,43 @@
           >
           </div>
 
+          <div class="upload-qr-section">
+
+  <div class="upload-divider">
+    <span>OR</span>
+  </div>
+
+  <p class="upload-qr-title">
+    Can't scan the QR code?
+  </p>
+
+  <p class="upload-qr-description">
+    Upload a photo or screenshot of the official
+    attendance QR code.
+  </p>
+
+  <label
+    for="qrImageUpload"
+    class="upload-qr-button"
+  >
+    🖼️ UPLOAD QR CODE
+  </label>
+
+  <input
+    type="file"
+    id="qrImageUpload"
+    accept="image/*"
+    style="display:none;"
+    onchange="handleQRImageUpload(event)"
+  >
+
+  <div
+    id="uploadQRStatus"
+    class="upload-qr-status"
+  ></div>
+
+</div>
+
 
           <p class="scanner-instruction">
             Point your camera at the official
