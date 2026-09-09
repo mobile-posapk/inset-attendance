@@ -18,24 +18,29 @@
     content="INSET 2026 Attendance System"
   >
 
-  <title>INSET 2026 </title>
+  <title>INSET 2026</title>
 
   <link
     rel="stylesheet"
     href="style.css"
   >
 
-  <!-- QR SCANNER -->
+  <!-- =====================================================
+       QR SCANNER LIBRARY
+       ===================================================== -->
   <script
     src="https://unpkg.com/html5-qrcode"
     defer
   ></script>
 
-  <!-- MAIN JAVASCRIPT -->
+  <!-- =====================================================
+       MAIN JAVASCRIPT
+       ===================================================== -->
   <script
     src="app.js"
     defer
   ></script>
+
 </head>
 
 
@@ -132,6 +137,7 @@
     </section>
 
 
+
     <!-- =====================================================
          IDENTIFY / SELECT USER PAGE
          ===================================================== -->
@@ -199,6 +205,7 @@
     </section>
 
 
+
     <!-- =====================================================
          REGISTRATION PAGE
          ===================================================== -->
@@ -238,9 +245,7 @@
             Register Participant
           </h2>
 
-          <p
-            id="registrationNote"
-          >
+          <p id="registrationNote">
             Register your details on this device.
           </p>
 
@@ -249,9 +254,7 @@
 
           <div class="form-group">
 
-            <label
-              for="firstName"
-            >
+            <label for="firstName">
               FIRST NAME
             </label>
 
@@ -270,9 +273,7 @@
 
           <div class="form-group">
 
-            <label
-              for="middleName"
-            >
+            <label for="middleName">
               MIDDLE NAME
             </label>
 
@@ -291,9 +292,7 @@
 
           <div class="form-group">
 
-            <label
-              for="lastName"
-            >
+            <label for="lastName">
               LAST NAME
             </label>
 
@@ -312,9 +311,7 @@
 
           <div class="form-group">
 
-            <label
-              for="registrationLicense"
-            >
+            <label for="registrationLicense">
               LICENSE NO.
             </label>
 
@@ -358,6 +355,7 @@
     </section>
 
 
+
     <!-- =====================================================
          SCANNER PAGE
          ===================================================== -->
@@ -369,6 +367,9 @@
     >
 
       <div class="scanner-card">
+
+
+        <!-- HEADER -->
 
         <div class="page-header">
 
@@ -391,7 +392,11 @@
         </div>
 
 
+
         <div class="scanner-content">
+
+
+          <!-- CAMERA STATUS -->
 
           <div
             id="scannerStatus"
@@ -401,7 +406,10 @@
           </div>
 
 
-          <!-- CAMERA READER -->
+
+          <!-- =================================================
+               CAMERA QR READER
+               ================================================= -->
 
           <div
             id="reader"
@@ -409,49 +417,85 @@
           >
           </div>
 
+
+
+          <!-- =================================================
+               UPLOAD QR CODE
+               ================================================= -->
+
           <div class="upload-qr-section">
 
-  <div class="upload-divider">
-    <span>OR</span>
-  </div>
 
-  <p class="upload-qr-title">
-    Can't scan the QR code?
-  </p>
+            <div class="upload-divider">
+              <span>OR</span>
+            </div>
 
-  <p class="upload-qr-description">
-    Upload a photo or screenshot of the official
-    attendance QR code.
-  </p>
 
-  <label
-    for="qrImageUpload"
-    class="upload-qr-button"
-  >
-    🖼️ UPLOAD QR CODE
-  </label>
+            <p class="upload-qr-title">
+              Can't scan the QR code?
+            </p>
 
-  <input
-    type="file"
-    id="qrImageUpload"
-    accept="image/*"
-    style="display:none;"
-    onchange="handleQRImageUpload(event)"
-  >
 
-  <div
-    id="uploadQRStatus"
-    class="upload-qr-status"
-  ></div>
+            <p class="upload-qr-description">
+              Upload a photo or screenshot of the official
+              attendance QR code.
+            </p>
 
-</div>
 
+            <!-- =================================================
+                 UPLOAD BUTTON
+
+                 IMPORTANT:
+                 This is now a real BUTTON instead of a LABEL.
+                 ================================================= -->
+
+            <button
+              type="button"
+              class="upload-qr-button"
+              onclick="openQRImagePicker()"
+            >
+              🖼️ UPLOAD QR CODE
+            </button>
+
+
+            <!-- =================================================
+                 HIDDEN FILE INPUT
+
+                 JavaScript opens this input when the
+                 UPLOAD QR CODE button is clicked.
+                 ================================================= -->
+
+            <input
+              type="file"
+              id="qrImageUpload"
+              accept="image/*"
+              style="display:none;"
+              onchange="handleQRImageUpload(event)"
+            >
+
+
+            <!-- UPLOAD STATUS -->
+
+            <div
+              id="uploadQRStatus"
+              class="upload-qr-status"
+            ></div>
+
+
+          </div>
+
+
+
+          <!-- CAMERA INSTRUCTION -->
 
           <p class="scanner-instruction">
             Point your camera at the official
             attendance QR code.
           </p>
 
+
+
+          <!-- CANCEL -->
 
           <button
             type="button"
@@ -461,11 +505,13 @@
             ✕ CANCEL
           </button>
 
+
         </div>
 
       </div>
 
     </section>
+
 
 
     <!-- =====================================================
@@ -480,6 +526,7 @@
 
       <div class="result-card success-card">
 
+
         <div class="result-icon">
           ✅
         </div>
@@ -490,9 +537,7 @@
         </h1>
 
 
-        <p
-          id="successMessage"
-        >
+        <p id="successMessage">
           Attendance recorded successfully.
         </p>
 
@@ -512,9 +557,11 @@
           🏠 DONE
         </button>
 
+
       </div>
 
     </section>
+
 
 
     <!-- =====================================================
@@ -529,6 +576,7 @@
 
       <div class="result-card error-card">
 
+
         <div class="result-icon">
           ❌
         </div>
@@ -539,9 +587,7 @@
         </h1>
 
 
-        <p
-          id="errorMessage"
-        >
+        <p id="errorMessage">
           Something went wrong.
         </p>
 
@@ -563,9 +609,11 @@
           🏠 HOME
         </button>
 
+
       </div>
 
     </section>
+
 
 
     <!-- =====================================================
@@ -579,6 +627,7 @@
     >
 
       <div class="form-card admin-login-card">
+
 
         <div class="page-header">
 
@@ -601,11 +650,14 @@
         </div>
 
 
+
         <div class="form-content">
+
 
           <h2>
             Administrator Login
           </h2>
+
 
           <p>
             Enter the administrator password
@@ -613,11 +665,12 @@
           </p>
 
 
+
+          <!-- ADMIN PASSWORD -->
+
           <div class="form-group">
 
-            <label
-              for="adminPassword"
-            >
+            <label for="adminPassword">
               ADMIN PASSWORD
             </label>
 
@@ -632,6 +685,9 @@
           </div>
 
 
+
+          <!-- LOGIN -->
+
           <button
             type="button"
             class="main-button admin-button"
@@ -641,6 +697,9 @@
           </button>
 
 
+
+          <!-- BACK -->
+
           <button
             type="button"
             class="secondary-button"
@@ -649,11 +708,13 @@
             ← BACK
           </button>
 
+
         </div>
 
       </div>
 
     </section>
+
 
 
     <!-- =====================================================
@@ -667,6 +728,9 @@
     >
 
       <div class="admin-card">
+
+
+        <!-- ADMIN HEADER -->
 
         <div class="page-header">
 
@@ -689,15 +753,18 @@
         </div>
 
 
+
         <!-- =================================================
              QR GENERATOR
              ================================================= -->
 
         <div class="admin-section">
 
+
           <h2>
             Attendance QR Codes
           </h2>
+
 
           <p>
             Generate the secure QR code for
@@ -705,7 +772,8 @@
           </p>
 
 
-          <!-- Hidden date field used by app.js -->
+
+          <!-- Hidden date field -->
 
           <input
             type="hidden"
@@ -714,87 +782,123 @@
           >
 
 
+
+          <!-- =================================================
+               QR BUTTONS
+               ================================================= -->
+
           <div class="admin-actions">
 
 
-            <!-- DAY 1 -->
+            <!-- DAY 1 TIME IN -->
 
             <button
               type="button"
               class="main-button primary-button qr-download-button"
               onclick="selectQRDay('2026-09-09'); generateQR('TIME-IN');"
             >
+
               DAY 1 — TIME IN
+
               <small>
                 September 9, 2026
               </small>
+
             </button>
 
+
+
+            <!-- DAY 1 TIME OUT -->
 
             <button
               type="button"
               class="main-button primary-button qr-download-button"
               onclick="selectQRDay('2026-09-09'); generateQR('TIME-OUT');"
             >
+
               DAY 1 — TIME OUT
+
               <small>
                 September 9, 2026
               </small>
+
             </button>
 
 
-            <!-- DAY 2 -->
+
+            <!-- DAY 2 TIME IN -->
 
             <button
               type="button"
               class="main-button primary-button qr-download-button"
               onclick="selectQRDay('2026-09-10'); generateQR('TIME-IN');"
             >
+
               DAY 2 — TIME IN
+
               <small>
                 September 10, 2026
               </small>
+
             </button>
 
+
+
+            <!-- DAY 2 TIME OUT -->
 
             <button
               type="button"
               class="main-button primary-button qr-download-button"
               onclick="selectQRDay('2026-09-10'); generateQR('TIME-OUT');"
             >
+
               DAY 2 — TIME OUT
+
               <small>
                 September 10, 2026
               </small>
+
             </button>
 
 
-            <!-- DAY 3 -->
+
+            <!-- DAY 3 TIME IN -->
 
             <button
               type="button"
               class="main-button primary-button qr-download-button"
               onclick="selectQRDay('2026-09-11'); generateQR('TIME-IN');"
             >
+
               DAY 3 — TIME IN
+
               <small>
                 September 11, 2026
               </small>
+
             </button>
 
+
+
+            <!-- DAY 3 TIME OUT -->
 
             <button
               type="button"
               class="main-button primary-button qr-download-button"
               onclick="selectQRDay('2026-09-11'); generateQR('TIME-OUT');"
             >
+
               DAY 3 — TIME OUT
+
               <small>
                 September 11, 2026
               </small>
+
             </button>
 
+
           </div>
+
 
 
           <!-- =================================================
@@ -810,6 +914,7 @@
           </div>
 
 
+
           <!-- =================================================
                QR DISPLAY
                ================================================= -->
@@ -819,6 +924,7 @@
             class="qr-container"
           >
           </div>
+
 
 
           <!-- =================================================
@@ -836,6 +942,7 @@
           </button>
 
 
+
           <!-- =================================================
                DOWNLOAD ALL 6 A4 PDF
                ================================================= -->
@@ -849,6 +956,7 @@
           </button>
 
 
+
           <!-- CLEAR -->
 
           <button
@@ -859,7 +967,9 @@
             🗑️ CLEAR QR
           </button>
 
+
         </div>
+
 
 
         <!-- =================================================
@@ -868,9 +978,11 @@
 
         <div class="admin-section">
 
+
           <h2>
             Attendance Summary
           </h2>
+
 
 
           <button
@@ -882,6 +994,7 @@
           </button>
 
 
+
           <div
             id="attendanceSummary"
             class="attendance-summary"
@@ -889,7 +1002,9 @@
             Loading attendance summary...
           </div>
 
+
         </div>
+
 
 
         <!-- =================================================
@@ -904,9 +1019,11 @@
           🔒 LOG OUT
         </button>
 
+
       </div>
 
     </section>
+
 
 
     <!-- =====================================================
@@ -938,11 +1055,9 @@
   </div>
 
 
+
   <!-- =======================================================
-       SMALL COMPATIBILITY STYLES
-       These only ensure the new functional elements are
-       readable even if the existing style.css has no rules
-       for them.
+       COMPATIBILITY STYLES
        ======================================================= -->
 
   <style>
@@ -951,15 +1066,18 @@
       width: 100%;
     }
 
+
     .form-content,
     .home-content,
     .scanner-content {
       width: 100%;
     }
 
+
     .form-group {
       margin-bottom: 18px;
     }
+
 
     .form-group label {
       display: block;
@@ -968,6 +1086,7 @@
       font-size: 13px;
       letter-spacing: .4px;
     }
+
 
     .form-group input {
       width: 100%;
@@ -980,10 +1099,13 @@
       outline: none;
     }
 
+
     .form-group input:focus {
       border-color: #0b2d52;
-      box-shadow: 0 0 0 3px rgba(11,45,82,.10);
+      box-shadow:
+        0 0 0 3px rgba(11,45,82,.10);
     }
+
 
     .secondary-button {
       width: 100%;
@@ -998,22 +1120,27 @@
       padding: 10px 14px;
     }
 
+
     .secondary-button:hover {
       transform: translateY(-1px);
     }
+
 
     .registered-users-list {
       width: 100%;
       margin: 20px 0;
     }
 
+
     .user-selection-heading {
       margin-bottom: 18px;
     }
 
+
     .user-selection-heading h2 {
       margin-bottom: 5px;
     }
+
 
     .registered-user-button {
       display: block;
@@ -1027,10 +1154,13 @@
       cursor: pointer;
     }
 
+
     .registered-user-button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 5px 15px rgba(0,0,0,.08);
+      box-shadow:
+        0 5px 15px rgba(0,0,0,.08);
     }
+
 
     .registered-user-name {
       display: block;
@@ -1039,17 +1169,20 @@
       margin-bottom: 5px;
     }
 
+
     .registered-user-license {
       display: block;
       font-size: 13px;
       opacity: .75;
     }
 
+
     .scanner-status {
       margin-bottom: 15px;
       text-align: center;
       font-weight: 600;
     }
+
 
     #reader {
       width: 100%;
@@ -1059,10 +1192,12 @@
       border-radius: 15px;
     }
 
+
     .scanner-instruction {
       text-align: center;
       margin: 12px 0 20px;
     }
+
 
     .success-details {
       margin: 20px 0;
@@ -1072,18 +1207,22 @@
       line-height: 1.8;
     }
 
+
     .admin-section {
       margin-top: 25px;
       margin-bottom: 25px;
     }
 
+
     .admin-section h2 {
       margin-bottom: 8px;
     }
 
+
     .admin-section > p {
       margin-bottom: 15px;
     }
+
 
     .admin-actions {
       display: grid;
@@ -1092,9 +1231,11 @@
       margin-bottom: 15px;
     }
 
+
     .admin-actions button {
       margin: 0;
     }
+
 
     .admin-actions small {
       display: block;
@@ -1102,6 +1243,7 @@
       font-size: 11px;
       opacity: .75;
     }
+
 
     .qr-container {
       min-height: 20px;
@@ -1113,11 +1255,13 @@
       margin: 15px 0;
     }
 
+
     .qr-container canvas,
     .qr-container img {
       max-width: 100%;
       height: auto;
     }
+
 
     .attendance-summary {
       width: 100%;
@@ -1125,10 +1269,12 @@
       margin-top: 15px;
     }
 
+
     .attendance-summary-table-wrapper {
       width: 100%;
       overflow-x: auto;
     }
+
 
     .attendance-summary-table {
       width: 100%;
@@ -1136,6 +1282,7 @@
       font-size: 12px;
       min-width: 650px;
     }
+
 
     .attendance-summary-table th,
     .attendance-summary-table td {
@@ -1145,10 +1292,12 @@
       white-space: nowrap;
     }
 
+
     .attendance-summary-table th {
       font-weight: 700;
       background: #f4f7fb;
     }
+
 
     .loading-box {
       background: #ffffff;
@@ -1156,8 +1305,10 @@
       padding: 25px;
       min-width: 220px;
       text-align: center;
-      box-shadow: 0 15px 40px rgba(0,0,0,.20);
+      box-shadow:
+        0 15px 40px rgba(0,0,0,.20);
     }
+
 
     .loading-spinner {
       width: 36px;
@@ -1166,18 +1317,108 @@
       border-top-color: #0b2d52;
       border-radius: 50%;
       margin: 0 auto 15px;
-      animation: insetSpin .8s linear infinite;
+      animation:
+        insetSpin .8s linear infinite;
     }
+
 
     .loading-message {
       font-weight: 600;
     }
 
+
     @keyframes insetSpin {
+
       to {
         transform: rotate(360deg);
       }
+
     }
+
+
+
+    /* =====================================================
+       UPLOAD QR CODE BUTTON FIX
+       ===================================================== */
+
+    .upload-qr-section {
+      position: relative;
+      z-index: 50;
+    }
+
+
+    .upload-qr-button {
+      position: relative;
+      z-index: 51;
+
+      display: flex;
+
+      align-items: center;
+      justify-content: center;
+
+      width: 100%;
+      min-height: 50px;
+
+      box-sizing: border-box;
+
+      border: none;
+      border-radius: 12px;
+
+      padding: 12px 16px;
+
+      font-size: 15px;
+      font-weight: 700;
+
+      cursor: pointer;
+
+      user-select: none;
+      -webkit-user-select: none;
+
+      touch-action: manipulation;
+
+      text-align: center;
+
+      background: #0b2d52;
+      color: #ffffff;
+
+      box-shadow:
+        0 5px 12px rgba(0,0,0,.15);
+
+      transition:
+        transform .15s ease,
+        box-shadow .15s ease,
+        opacity .15s ease;
+    }
+
+
+    .upload-qr-button:hover {
+      transform: translateY(-1px);
+
+      box-shadow:
+        0 7px 16px rgba(0,0,0,.18);
+    }
+
+
+    .upload-qr-button:active {
+      transform: translateY(0);
+
+      box-shadow:
+        0 3px 8px rgba(0,0,0,.15);
+    }
+
+
+    .upload-qr-button:focus {
+      outline:
+        3px solid rgba(11,45,82,.18);
+
+      outline-offset: 2px;
+    }
+
+
+
+    /* =====================================================
+       MOBILE
+       ===================================================== */
 
     @media (max-width: 600px) {
 
@@ -1185,18 +1426,27 @@
         margin-top: 20px;
       }
 
+
       .qr-container {
         padding: 10px;
       }
+
 
       .qr-container canvas,
       .qr-container img {
         max-width: 100%;
       }
 
+
+      .upload-qr-button {
+        min-height: 52px;
+        font-size: 15px;
+      }
+
     }
 
   </style>
+
 
 </body>
 </html>
