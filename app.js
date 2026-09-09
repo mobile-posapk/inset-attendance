@@ -16,7 +16,25 @@ const API_URL =
    MAINTENANCE MODE
    ========================================================= */
 
+/* =========================================================
+   SYSTEM MAINTENANCE CHECK
+   ========================================================= */
+
 async function checkSystemMaintenance() {
+
+  /*
+   * Hide all pages while checking the server.
+   */
+  document
+    .querySelectorAll(".page")
+    .forEach(function(page) {
+
+      page.classList.remove("active");
+
+      page.style.display = "none";
+
+    });
+
 
   try {
 
@@ -26,19 +44,39 @@ async function checkSystemMaintenance() {
         {}
       );
 
+
+    console.log(
+      "SYSTEM STATUS:",
+      result
+    );
+
+
+    /*
+     * MAINTENANCE MODE
+     */
     if (
       result &&
       result.maintenance === true
     ) {
 
-      showPage("maintenancePage");
+      showPage(
+        "maintenancePage"
+      );
 
       return true;
+
     }
 
-    showPage("homePage");
+
+    /*
+     * NORMAL SYSTEM
+     */
+    showPage(
+      "homePage"
+    );
 
     return false;
+
 
   } catch (error) {
 
@@ -47,16 +85,20 @@ async function checkSystemMaintenance() {
       error
     );
 
+
     /*
-     * If the status cannot be checked,
-     * keep the normal system available.
+     * If the server cannot be checked,
+     * allow the normal system to open.
      */
-    showPage("homePage");
+    showPage(
+      "homePage"
+    );
 
     return false;
-  }
-}
 
+  }
+
+}
 const EVENT_START = "2026-09-09";
 const EVENT_END   = "2026-09-11";
 
