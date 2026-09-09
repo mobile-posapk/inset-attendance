@@ -78,28 +78,33 @@ function apiRequest(action, data = {}) {
   return new Promise((resolve, reject) => {
 
     const callbackName =
-      'insetAPI_' +
+      'insetCallback_' +
       Date.now() +
       '_' +
       Math.floor(
-        Math.random() * 100000
+        Math.random() * 1000000
       );
+
 
     const script =
       document.createElement('script');
 
+
     const params =
       new URLSearchParams();
+
 
     params.set(
       'action',
       action
     );
 
+
     params.set(
       'callback',
       callbackName
     );
+
 
     Object.keys(data).forEach(key => {
 
@@ -117,65 +122,79 @@ function apiRequest(action, data = {}) {
 
     });
 
-    const url =
-      `${API_URL}?${params.toString()}`;
+
+    const requestURL =
+      API_URL +
+      '?' +
+      params.toString();
 
 
-    let finished = false;
+    let completed = false;
 
 
-    function cleanup() {
+    const cleanup = () => {
 
       if (script.parentNode) {
+
         script.parentNode.removeChild(
           script
         );
+
       }
+
 
       try {
+
         delete window[callbackName];
+
       } catch (error) {
+
         window[callbackName] =
           undefined;
-      }
 
-    }
+      }
+    };
 
 
     window[callbackName] =
-      function(result) {
+      function(response) {
 
-        if (finished) {
+        if (completed) {
           return;
         }
 
-        finished = true;
+
+        completed = true;
 
         cleanup();
 
-        resolve(result);
-
+        resolve(response);
       };
 
 
     script.onerror =
       function() {
 
-        if (finished) {
+        if (completed) {
           return;
         }
 
-        finished = true;
+
+        completed = true;
 
         cleanup();
+
 
         reject(
           new Error(
             'Unable to connect to the attendance server.'
           )
         );
-
       };
+
+
+    script.src =
+      requestURL;
 
 
     document.head.appendChild(
@@ -183,18 +202,17 @@ function apiRequest(action, data = {}) {
     );
 
 
-    /*
-     * Prevent an endless loading screen.
-     */
     setTimeout(() => {
 
-      if (finished) {
+      if (completed) {
         return;
       }
 
-      finished = true;
+
+      completed = true;
 
       cleanup();
+
 
       reject(
         new Error(
@@ -202,11 +220,10 @@ function apiRequest(action, data = {}) {
         )
       );
 
-    }, 15000);
+    }, 20000);
 
   });
 }
-
 /* =========================================================
    HOME
    ========================================================= */
