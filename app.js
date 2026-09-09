@@ -111,6 +111,10 @@ function showHome() {
    START ATTENDANCE
    ========================================================= */
 
+/* =========================================================
+   START ATTENDANCE
+   ========================================================= */
+
 function startAttendance() {
 
   const savedLicense =
@@ -120,44 +124,153 @@ function startAttendance() {
 
 
   /*
-   * If the participant already has
-   * a saved License No., we can
-   * immediately open the scanner.
+   * =====================================================
+   * NO SAVED LICENSE
+   * =====================================================
    */
 
-  if (savedLicense) {
+  if (!savedLicense) {
 
-    currentParticipant = {
+    currentParticipant = null;
 
-      licenseNo:
-        savedLicense
+    document.getElementById(
+      "identifyLicense"
+    ).value = "";
 
-    };
-
-
-    startScanner();
+    showPage(
+      "identifyPage"
+    );
 
     return;
-
   }
 
 
   /*
-   * No saved License No.
+   * =====================================================
+   * VERIFY SAVED LICENSE AGAINST DATABASE
+   *
+   * This prevents a deleted participant from
+   * continuing to use the old saved login.
+   * =====================================================
    */
 
-  document.getElementById(
-    "identifyLicense"
-  ).value = "";
+  showLoading(true);
 
 
-  showPage(
-    "identifyPage"
+  apiCall(
+    "verifyParticipant",
+    {
+      licenseNo:
+        savedLicense
+    }
+  )
+
+  .then(
+    function(result) {
+
+      showLoading(false);
+
+
+      /*
+       * =================================================
+       * LICENSE STILL EXISTS
+       * =================================================
+       */
+
+      if (
+        result &&
+        result.success &&
+        result.found &&
+        result.participant
+      ) {
+
+        currentParticipant =
+          result.participant;
+
+        /*
+         * Refresh the saved License No.
+         * using the value returned by
+         * the database.
+         */
+
+        localStorage.setItem(
+          LICENSE_STORAGE_KEY,
+          result.participant.licenseNo
+        );
+
+
+        /*
+         * Continue normally.
+         */
+
+        startScanner();
+
+        return;
+      }
+
+
+      /*
+       * =================================================
+       * LICENSE NO. WAS DELETED / NOT FOUND
+       * =================================================
+       *
+       * Clear the old saved login.
+       */
+
+      localStorage.removeItem(
+        LICENSE_STORAGE_KEY
+      );
+
+
+      currentParticipant = null;
+
+
+      /*
+       * Clear identification field.
+       */
+
+      document.getElementById(
+        "identifyLicense"
+      ).value = "";
+
+
+      /*
+       * Start again from identification.
+       */
+
+      showPage(
+        "identifyPage"
+      );
+
+    }
+  )
+
+  .catch(
+    function(error) {
+
+      showLoading(false);
+
+
+      /*
+       * IMPORTANT:
+       *
+       * If the server is temporarily unavailable,
+       * DO NOT erase the saved License No.
+       *
+       * This prevents someone from being forced
+       * to register again just because of a
+       * temporary internet/server problem.
+       */
+
+      showError(
+        error.message ||
+        "Unable to verify your License No. Please try again."
+      );
+
+    }
   );
 
 }
-
-
 /* =========================================================
    IDENTIFY PARTICIPANT
    ========================================================= */
