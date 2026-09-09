@@ -900,56 +900,7 @@ function showUserSelection() {
 
   });
 
-    // REMOVE ACCOUNT BUTTON
-    const removeButton =
-      document.createElement("button");
 
-    removeButton.type = "button";
-    removeButton.textContent = "REMOVE";
-
-    removeButton.style.width = "90px";
-    removeButton.style.minWidth = "90px";
-    removeButton.style.border = "none";
-    removeButton.style.borderRadius = "12px";
-    removeButton.style.background = "#dc3545";
-    removeButton.style.color = "#ffffff";
-    removeButton.style.fontWeight = "700";
-    removeButton.style.cursor = "pointer";
-
-    removeButton.addEventListener(
-      "click",
-      function(event) {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        const confirmed =
-          window.confirm(
-            "REMOVE THIS ACCOUNT FROM THIS DEVICE?\n\n" +
-            getParticipantFullName(user) +
-            "\n\n" +
-            "This will NOT delete the participant " +
-            "or attendance records from the school database."
-          );
-
-        if (!confirmed) {
-          return;
-        }
-
-        removeRegisteredUser(
-          user.licenseNo
-        );
-
-        currentParticipant = null;
-        selectedUserIndex = null;
-
-        showUserSelection();
-
-      }
-    );
-
-    wrapper.appendChild(selectButton);
-    wrapper.appendChild(removeButton);
   // ==========================================
   // REGISTER ANOTHER USER
   // ==========================================
