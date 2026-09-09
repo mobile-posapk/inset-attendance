@@ -15,7 +15,7 @@
  * DO NOT CHANGE THIS YET.
  */
 
-const API_URL = "";
+const API_URL = "https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9emBZvJ_wsEi1CqABGV5-g0jIcZ0Ji7TqNOccygIlIflF3w/exec";
 
 
 /* =========================================================
