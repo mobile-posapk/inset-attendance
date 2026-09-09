@@ -1766,3 +1766,133 @@ body {
   }
 
 }
+
+/* =========================================================
+   MULTIPLE REGISTERED USER SELECTION
+   ========================================================= */
+
+.registered-users {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin: 20px 0;
+}
+
+.registered-user-button {
+  width: 100%;
+  min-height: 72px;
+  border: 1px solid #d8e1eb;
+  border-radius: 16px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.2s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+}
+
+.registered-user-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
+}
+
+.registered-user-button:active {
+  transform: scale(0.98);
+}
+
+.user-number {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 50%;
+  background: #12558a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.user-information {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.user-information strong {
+  font-size: 16px;
+  color: #172033;
+  line-height: 1.25;
+}
+
+.user-information small {
+  font-size: 13px;
+  color: #687789;
+}
+
+.no-users-message {
+  text-align: center;
+  padding: 20px;
+  margin: 15px 0;
+  border-radius: 14px;
+  background: #f4f7fb;
+  border: 1px solid #e0e7ef;
+  color: #4b5968;
+}
+
+.no-users-message strong {
+  display: block;
+  color: #172033;
+  margin-bottom: 6px;
+}
+
+.no-users-message p {
+  margin: 0;
+}
+
+.selected-user-display {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 12px 0 18px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: #f4f7fb;
+  border: 1px solid #dce5ee;
+  text-align: center;
+}
+
+.selected-user-display strong {
+  display: block;
+  font-size: 16px;
+  color: #172033;
+}
+
+.selected-user-display small {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #687789;
+}
+
+@media (max-width: 600px) {
+
+  .registered-user-button {
+    min-height: 68px;
+    padding: 12px 14px;
+  }
+
+  .user-information strong {
+    font-size: 15px;
+  }
+
+  .user-information small {
+    font-size: 12px;
+  }
+
+}
