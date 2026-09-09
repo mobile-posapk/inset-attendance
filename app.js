@@ -829,17 +829,14 @@ function showUserSelection() {
     );
 
 
-    // ==========================================
-    // REMOVE BUTTON
-    // ==========================================
+    
 
+    // REMOVE ACCOUNT BUTTON
     const removeButton =
       document.createElement("button");
 
     removeButton.type = "button";
-
-    removeButton.textContent =
-      "REMOVE";
+    removeButton.textContent = "REMOVE";
 
     removeButton.style.width = "90px";
     removeButton.style.minWidth = "90px";
@@ -857,13 +854,10 @@ function showUserSelection() {
         event.preventDefault();
         event.stopPropagation();
 
-        const name =
-          getParticipantFullName(user);
-
         const confirmed =
           window.confirm(
             "REMOVE THIS ACCOUNT FROM THIS DEVICE?\n\n" +
-            name +
+            getParticipantFullName(user) +
             "\n\n" +
             "This will NOT delete the participant " +
             "or attendance records from the school database."
@@ -885,22 +879,8 @@ function showUserSelection() {
       }
     );
 
-
-    wrapper.appendChild(
-      selectButton
-    );
-
-    wrapper.appendChild(
-      removeButton
-    );
-
-    list.appendChild(
-      wrapper
-    );
-
-  });
-
-
+    wrapper.appendChild(selectButton);
+    wrapper.appendChild(removeButton);
   // ==========================================
   // REGISTER ANOTHER USER
   // ==========================================
