@@ -74,31 +74,70 @@ function hideLoading() {
    ========================================================= */
 
 async function apiRequest(action, data = {}) {
+
   const params = new URLSearchParams();
 
-  params.append('action', action);
+  params.set('action', action);
 
   Object.keys(data).forEach(key => {
-    const value = data[key];
-
-    if (value !== undefined && value !== null) {
-      params.append(key, String(value));
+    if (data[key] !== undefined && data[key] !== null) {
+      params.set(key, String(data[key]));
     }
   });
 
-  const response = await fetch(
-    `${API_URL}?${params.toString()}`,
-    {
+  const url =
+    `${API_URL}?${params.toString()}`;
+
+  try {
+
+    const response = await fetch(url, {
       method: 'GET',
+      redirect: 'follow',
       cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
     }
-  );
 
-  if (!response.ok) {
-    throw new Error(`Server error: ${response.status}`);
+    const text =
+      await response.text();
+
+    if (!text) {
+      throw new Error(
+        'Empty response from server.'
+      );
+    }
+
+    let result;
+
+    try {
+      result = JSON.parse(text);
+    } catch (jsonError) {
+
+      console.error(
+        'Invalid server response:',
+        text
+      );
+
+      throw new Error(
+        'The Google Apps Script did not return JSON. Check the Web App deployment.'
+      );
+    }
+
+    return result;
+
+  } catch (error) {
+
+    console.error(
+      `API ERROR [${action}]:`,
+      error
+    );
+
+    throw error;
   }
-
-  return await response.json();
 }
 
 
