@@ -1195,27 +1195,14 @@ function generateQR(
     ).value;
 
 
-  const attendanceTime =
-    document.getElementById(
-      "attendanceTime"
-    ).value;
-
+  /*
+   * Validate date.
+   */
 
   if (!attendanceDate) {
 
     alert(
       "Please select the attendance date."
-    );
-
-    return;
-
-  }
-
-
-  if (!attendanceTime) {
-
-    alert(
-      "Please select the official time."
     );
 
     return;
@@ -1236,10 +1223,7 @@ function generateQR(
         mode,
 
       attendanceDate:
-        attendanceDate,
-
-      attendanceTime:
-        attendanceTime
+        attendanceDate
 
     }
   )
@@ -1291,8 +1275,6 @@ function generateQR(
   );
 
 }
-
-
 /* =========================================================
    DISPLAY QR CODE
    ========================================================= */
@@ -1313,7 +1295,8 @@ function displayQRCode(
     );
 
 
-  container.innerHTML = "";
+  container.innerHTML =
+    "";
 
 
   status.textContent =
@@ -1321,7 +1304,7 @@ function displayQRCode(
 
 
   /*
-   * Load QRCode library if necessary.
+   * Load QRCode library.
    */
 
   loadQRCodeLibrary(
@@ -1357,14 +1340,10 @@ function displayQRCode(
 
         "</strong><br>" +
 
+        "Attendance Date: " +
+
         escapeHTML(
           result.date
-        ) +
-
-        " — " +
-
-        escapeHTML(
-          result.time
         ) +
 
         "<br><br>" +
@@ -1378,7 +1357,6 @@ function displayQRCode(
         "</span>";
 
 
-
       startQRCountdown(
         result.expiresAt
       );
@@ -1387,8 +1365,6 @@ function displayQRCode(
   );
 
 }
-
-
 /* =========================================================
    QR CODE LIBRARY
    ========================================================= */
