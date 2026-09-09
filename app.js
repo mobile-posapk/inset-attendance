@@ -796,68 +796,32 @@ function showUserSelection(users) {
         ? "****" + license.slice(-4)
         : license;
 
-    const card =
-      document.createElement("div");
+    const button =
+      document.createElement("button");
 
-    card.className =
-      "registered-user-card";
+    button.type = "button";
+    button.className =
+      "registered-user-button";
 
-    card.innerHTML = `
-      <div class="registered-user-info">
-        <div class="registered-user-name">
-          ${escapeHtml(fullName)}
-        </div>
-
-        <div class="registered-user-license">
-          PRC License No.:
-          ${escapeHtml(maskedLicense)}
-        </div>
+    button.innerHTML = `
+      <div class="registered-user-name">
+        ${escapeHtml(fullName)}
       </div>
 
-      <div class="registered-user-actions">
-
-        <button
-          type="button"
-          class="registered-user-button"
-        >
-          SELECT
-        </button>
-
-        <button
-          type="button"
-          class="remove-button"
-        >
-          REMOVE
-        </button>
-
+      <div class="registered-user-license">
+        PRC License No.:
+        ${escapeHtml(maskedLicense)}
       </div>
     `;
 
-    const selectButton =
-      card.querySelector(
-        ".registered-user-button"
-      );
-
-    const removeButton =
-      card.querySelector(
-        ".remove-button"
-      );
-
-    selectButton.addEventListener(
+    button.addEventListener(
       "click",
       function() {
         chooseRegisteredUser(index);
       }
     );
 
-    removeButton.addEventListener(
-      "click",
-      function() {
-        removeRegisteredUser(index);
-      }
-    );
-
-    container.appendChild(card);
+    container.appendChild(button);
   });
 
   const registerButton =
@@ -879,7 +843,6 @@ function showUserSelection(users) {
 
   container.appendChild(registerButton);
 }
-
 
 
 
