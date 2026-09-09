@@ -1242,7 +1242,100 @@ input:focus-visible {
 
 }
 
+/* =========================================================
+   UPLOAD QR CODE
+   ========================================================= */
 
+.upload-qr-section {
+  width: 100%;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.upload-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.upload-divider::before,
+.upload-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #dce3eb;
+}
+
+.upload-divider span {
+  flex: 0 0 auto;
+}
+
+.upload-qr-title {
+  margin-bottom: 5px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.upload-qr-description {
+  margin-bottom: 14px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.upload-qr-button {
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 12px 16px;
+
+  border-radius: 12px;
+
+  border: 2px dashed #aebdcd;
+
+  background: #f7f9fc;
+
+  color: #0b2d52;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    transform .18s ease;
+}
+
+.upload-qr-button:hover {
+  background: #eef4f9;
+  border-color: #0b2d52;
+  transform: translateY(-1px);
+}
+
+.upload-qr-button:active {
+  transform: translateY(0);
+}
+
+.upload-qr-status {
+  margin-top: 10px;
+  min-height: 20px;
+
+  color: #64748b;
+
+  font-size: 12px;
+  line-height: 1.4;
+}
 /* =========================================================
    END OF FINAL style.css
    ========================================================= */
