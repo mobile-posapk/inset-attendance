@@ -1175,13 +1175,13 @@ async function checkAdminPassword() {
   try {
 
     const result =
-      await apiCall(
-        "adminLogin",
-        {
-          password:
-            password
-        }
-      );
+  await apiCall(
+    "checkAdminPassword",
+    {
+      password:
+        password
+    }
+  );
 
 
     showLoading(false);
