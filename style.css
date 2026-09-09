@@ -1216,3 +1216,484 @@ body {
   }
 
 }
+
+/* ============================================================
+   INSET 2026 — QR GENERATOR
+   ADMIN DAY CARDS
+   ============================================================ */
+
+.qr-day-card {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.qr-day-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09);
+}
+
+
+/* ============================================================
+   QR DAY HEADER
+   ============================================================ */
+
+.qr-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 16px;
+}
+
+.qr-day-header h3 {
+  margin: 5px 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.qr-day-label {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.qr-validity {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  background: #f3f4f6;
+}
+
+
+/* ============================================================
+   TIME-IN / TIME-OUT BUTTONS
+   ============================================================ */
+
+.qr-mode-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.qr-generate-button {
+  min-height: 52px;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.qr-generate-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.12);
+}
+
+.qr-generate-button:active {
+  transform: translateY(0);
+}
+
+.qr-generate-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.qr-time-in {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.qr-time-in:hover {
+  background: #bbf7d0;
+}
+
+.qr-time-out {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.qr-time-out:hover {
+  background: #fecaca;
+}
+
+
+/* ============================================================
+   QR STATUS
+   ============================================================ */
+
+.qr-status {
+  min-height: 22px;
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.qr-status.error {
+  font-weight: 700;
+}
+
+
+/* ============================================================
+   QR CONTAINER
+   ============================================================ */
+
+.qr-container {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 16px;
+  padding: 20px;
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 1px dashed #d1d5db;
+}
+
+
+/* ============================================================
+   QR PLACEHOLDER
+   ============================================================ */
+
+.qr-placeholder {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.qr-placeholder-icon {
+  font-size: 4rem;
+  line-height: 1;
+  opacity: 0.35;
+}
+
+.qr-placeholder p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+
+/* ============================================================
+   GENERATED QR
+   ============================================================ */
+
+.generated-qr-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.generated-qr-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.generated-qr-date {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.generated-qr-image {
+  display: block;
+  width: min(100%, 420px);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 12px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.generated-qr-validity {
+  width: min(100%, 420px);
+  box-sizing: border-box;
+  margin-top: 15px;
+  padding: 12px 15px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+
+/* ============================================================
+   DOWNLOAD QR BUTTON
+   ============================================================ */
+
+.download-qr-button {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 16px;
+  border: none;
+  border-radius: 13px;
+  padding: 13px 18px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.download-qr-button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.download-qr-button:not(:disabled):active {
+  transform: translateY(0);
+}
+
+.download-qr-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+
+/* ============================================================
+   CLEAR QR BUTTON
+   ============================================================ */
+
+.clear-qr-button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: transparent;
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+}
+
+.clear-qr-button:hover {
+  background: #f3f4f6;
+}
+
+.clear-qr-button:active {
+  transform: translateY(1px);
+}
+
+
+/* ============================================================
+   ADMIN SECTION
+   ============================================================ */
+
+.admin-section {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 25px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.section-heading p {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.section-number {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+
+/* ============================================================
+   SUMMARY
+   ============================================================ */
+
+.attendance-summary {
+  width: 100%;
+  margin-top: 15px;
+  overflow-x: auto;
+}
+
+.summary-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.summary-table th,
+.summary-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.summary-table th {
+  font-weight: 800;
+}
+
+.summary-loading,
+.summary-empty,
+.summary-error {
+  padding: 18px;
+  text-align: center;
+  border-radius: 12px;
+  background: #f8fafc;
+  font-size: 0.85rem;
+}
+
+
+/* ============================================================
+   ADMIN FOOTER
+   ============================================================ */
+
+.admin-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 600px) {
+
+  .qr-day-card {
+    padding: 15px;
+    border-radius: 15px;
+  }
+
+  .qr-day-header {
+    align-items: flex-start;
+  }
+
+  .qr-day-header h3 {
+    font-size: 0.95rem;
+  }
+
+  .qr-day-label {
+    font-size: 0.72rem;
+  }
+
+  .qr-validity {
+    font-size: 0.62rem;
+    padding: 5px 8px;
+  }
+
+  .qr-mode-buttons {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .qr-generate-button {
+    min-height: 48px;
+  }
+
+  .qr-container {
+    padding: 12px;
+  }
+
+  .generated-qr-title {
+    font-size: 1rem;
+  }
+
+  .generated-qr-date {
+    font-size: 0.85rem;
+  }
+
+  .generated-qr-image {
+    width: min(100%, 330px);
+    padding: 8px;
+  }
+
+  .generated-qr-validity {
+    width: 100%;
+    font-size: 0.76rem;
+  }
+
+  .download-qr-button {
+    min-height: 52px;
+  }
+
+}
+
+
+/* ============================================================
+   VERY SMALL PHONES
+   ============================================================ */
+
+@media (max-width: 380px) {
+
+  .qr-day-header {
+    flex-direction: column;
+  }
+
+  .qr-validity {
+    align-self: flex-start;
+  }
+
+  .generated-qr-image {
+    width: min(100%, 280px);
+  }
+
+}
