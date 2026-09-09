@@ -748,6 +748,10 @@ function clearRegistrationForm() {
    USER SELECTION
    ========================================================= */
 
+/* =========================================================
+   USER SELECTION
+   ========================================================= */
+
 function showUserSelection() {
 
   stopScanner();
@@ -783,11 +787,6 @@ function showUserSelection() {
     return;
   }
 
-
-  /* =======================================================
-     DISPLAY ALL REGISTERED ACCOUNTS
-     ======================================================= */
-
   users.forEach(function(user, index) {
 
     const wrapper =
@@ -797,7 +796,6 @@ function showUserSelection() {
     wrapper.style.gap = "8px";
     wrapper.style.marginBottom = "10px";
     wrapper.style.alignItems = "stretch";
-
 
     /* =====================================================
        SELECT USER BUTTON
@@ -814,7 +812,9 @@ function showUserSelection() {
     selectButton.style.flex = "1";
 
     selectButton.innerHTML = `
-      <span class="user-radio">○</span>
+      <span class="user-radio">
+        ○
+      </span>
 
       <span class="registered-user-info">
 
@@ -834,13 +834,6 @@ function showUserSelection() {
       </span>
     `;
 
-
-    /*
-     * IMPORTANT:
-     *
-     * Clicking the account must select that
-     * participant and continue to the QR scanner.
-     */
     selectButton.addEventListener(
       "click",
       function(event) {
@@ -849,7 +842,7 @@ function showUserSelection() {
         event.stopPropagation();
 
         console.log(
-          "Selected account:",
+          "Selected registered user:",
           user
         );
 
@@ -880,7 +873,6 @@ function showUserSelection() {
     removeButton.style.fontWeight = "700";
     removeButton.style.cursor = "pointer";
 
-
     removeButton.addEventListener(
       "click",
       function(event) {
@@ -888,10 +880,8 @@ function showUserSelection() {
         event.preventDefault();
         event.stopPropagation();
 
-
         const name =
           getParticipantFullName(user);
-
 
         const confirmed =
           window.confirm(
@@ -902,30 +892,26 @@ function showUserSelection() {
             "or attendance records from the school database."
           );
 
-
         if (!confirmed) {
           return;
         }
-
 
         removeRegisteredUser(
           user.licenseNo
         );
 
-
         currentParticipant = null;
-
         selectedUserIndex = null;
 
-
-        /*
-         * Rebuild the account list after removal.
-         */
         showUserSelection();
 
       }
     );
 
+
+    /* =====================================================
+       ADD BUTTONS TO USER ROW
+       ===================================================== */
 
     wrapper.appendChild(
       selectButton
@@ -934,7 +920,6 @@ function showUserSelection() {
     wrapper.appendChild(
       removeButton
     );
-
 
     list.appendChild(
       wrapper
@@ -958,7 +943,6 @@ function showUserSelection() {
   registerButton.textContent =
     "➕ Register Another User";
 
-
   registerButton.addEventListener(
     "click",
     function(event) {
@@ -970,14 +954,13 @@ function showUserSelection() {
     }
   );
 
-
   list.appendChild(
     registerButton
   );
 
 
   /* =======================================================
-     SHOW IDENTIFY PAGE
+     SHOW USER SELECTION PAGE
      ======================================================= */
 
   showPage(
@@ -985,7 +968,6 @@ function showUserSelection() {
   );
 
 }
-
 function chooseRegisteredUser(index) {
 
   const users = getRegisteredUsers();
