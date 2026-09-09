@@ -1,211 +1,257 @@
-/* ============================================================
+/* =========================================================
    INSET 2026 ATTENDANCE SYSTEM
-   FRONTEND APP.JS
-   ============================================================ */
+   app.js
+   ========================================================= */
 
 
-/* ============================================================
+/* =========================================================
    CONFIGURATION
-   ============================================================ */
+   ========================================================= */
 
 const API_URL =
-  'https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9emBZvJ_wsEi1CqABGV5-g0jIcZ0Ji7TqNOccygIlIflF3w/exec';
+  "https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9emBZvJ_wsEi1CqABGV5-g0jIcZ0Ji7TqNOccygIlIflF3w/exec";
 
-const PENDING_QR_TOKEN_KEY =
-  'inset_pending_qr_token';
+const EVENT_START = "2026-09-09";
+const EVENT_END = "2026-09-11";
 
-const LICENSE_STORAGE_KEY =
-  'inset_license';
+const LICENSE_STORAGE_KEY = "inset_license";
+const PENDING_QR_TOKEN_KEY = "inset_pending_qr_token";
+
+
+/* =========================================================
+   GLOBAL VARIABLES
+   ========================================================= */
+
+let scanner = null;
+let scannerRunning = false;
+let scannerProcessing = false;
 
 let currentParticipant = null;
-
-let html5QrCode = null;
-
-let scannerRunning = false;
-
-let selectedQRDay = '2026-09-09';
-
-let generatedQRData = null;
+let generatedQR = null;
 
 
-/* ============================================================
-   PAGE HELPERS
-   ============================================================ */
-
-function getPage(id) {
-  return document.getElementById(id);
-}
-
+/* =========================================================
+   PAGE NAVIGATION
+   ========================================================= */
 
 function showPage(pageId) {
 
-  document.querySelectorAll('.page').forEach(page => {
-    page.classList.remove('active');
+  const pages = document.querySelectorAll(".page");
+
+  pages.forEach(page => {
+    page.classList.remove("active");
   });
 
-  const page = getPage(pageId);
+  const target = document.getElementById(pageId);
 
-  if (page) {
-    page.classList.add('active');
+  if (target) {
+    target.classList.add("active");
   }
 
   window.scrollTo({
     top: 0,
-    behavior: 'smooth'
+    behavior: "smooth"
   });
 }
 
 
-/* ============================================================
+/* =========================================================
    HOME
-   ============================================================ */
+   ========================================================= */
 
 function showHome() {
 
   stopScanner();
 
-  currentParticipant = null;
+  scannerProcessing = false;
 
-  clearPendingQR();
-
-  showPage('homePage');
+  showPage("homePage");
 }
 
 
-function startAttendance() {
+/* =========================================================
+   START ATTENDANCE
+   =========================================================
+   IMPORTANT:
+   The scanner opens immediately.
 
-  stopScanner();
+   If a saved license exists:
+      scan -> attendance
 
-  currentParticipant = null;
+   If no saved license exists:
+      scan -> registration
+   ========================================================= */
+
+async function startAttendance() {
+
+  scannerProcessing = false;
 
   /*
-   * A new scan session starts here.
-   * Any abandoned pending QR from a previous attempt
-   * is removed.
+   * A new attendance session starts here.
+   * Remove any abandoned pending token from a previous session.
    */
-  clearPendingQR();
+  localStorage.removeItem(PENDING_QR_TOKEN_KEY);
 
-  showPage('scannerPage');
+  const savedLicense =
+    localStorage.getItem(LICENSE_STORAGE_KEY);
 
-  updateScannerStatus(
-    'Point your camera at the attendance QR code.'
-  );
+  if (savedLicense) {
 
-  setTimeout(() => {
-    startScanner();
-  }, 300);
+    currentParticipant = {
+      licenseNo: savedLicense
+    };
+
+  } else {
+
+    currentParticipant = null;
+  }
+
+  showPage("scannerPage");
+
+  const status =
+    document.getElementById("scannerStatus");
+
+  if (status) {
+    status.innerHTML =
+      "📷 <strong>Ready to scan</strong><br>" +
+      "Point your camera at the INSET 2026 QR code.";
+  }
+
+  await startScanner();
 }
 
 
-/* ============================================================
+/* =========================================================
    REGISTRATION
-   ============================================================ */
+   =========================================================
+   Direct REGISTER button.
+
+   Since this is a direct registration,
+   remove an old pending QR token.
+   ========================================================= */
 
 function openRegistration() {
 
+  localStorage.removeItem(PENDING_QR_TOKEN_KEY);
+
+  openRegistrationPage(false);
+}
+
+
+/* =========================================================
+   INTERNAL REGISTRATION PAGE
+   ========================================================= */
+
+function openRegistrationPage(clearPending = false) {
+
+  if (clearPending) {
+    localStorage.removeItem(PENDING_QR_TOKEN_KEY);
+  }
+
   stopScanner();
 
-  /*
-   * Direct registration should not accidentally use
-   * an old pending QR.
-   */
-  clearPendingQR();
-
-  resetRegistrationForm();
-
-  const note = getPage('registrationNote');
+  const note =
+    document.getElementById("registrationNote");
 
   if (note) {
     note.innerHTML =
-      'Register your information to use the attendance system.';
+      "Please enter your information to continue.";
   }
-
-  showPage('registrationPage');
-}
-
-
-function resetRegistrationForm() {
-
-  const fields = [
-    'firstName',
-    'middleName',
-    'lastName',
-    'registrationLicense'
-  ];
-
-  fields.forEach(id => {
-
-    const field = getPage(id);
-
-    if (field) {
-      field.value = '';
-    }
-
-  });
-}
-
-
-function registerUser() {
-
-  const firstName =
-    getPage('firstName')?.value.trim() || '';
-
-  const middleName =
-    getPage('middleName')?.value.trim() || '';
-
-  const lastName =
-    getPage('lastName')?.value.trim() || '';
 
   const license =
-    getPage('registrationLicense')?.value.trim() || '';
+    localStorage.getItem(LICENSE_STORAGE_KEY);
 
+  const licenseInput =
+    document.getElementById("registrationLicense");
+
+  /*
+   * If we already know the license, show it.
+   */
+  if (license && licenseInput && !licenseInput.value) {
+    licenseInput.value = license;
+  }
+
+  showPage("registrationPage");
+}
+
+
+/* =========================================================
+   COMPATIBILITY ALIAS
+   =========================================================
+   Some older versions of index.html used identifyUser().
+   Keep it available so nothing breaks.
+   ========================================================= */
+
+function identifyUser() {
+
+  openRegistration();
+}
+
+
+/* =========================================================
+   REGISTRATION SUBMISSION
+   ========================================================= */
+
+async function registerUser() {
+
+  const firstName =
+    document.getElementById("firstName")?.value.trim() || "";
+
+  const middleName =
+    document.getElementById("middleName")?.value.trim() || "";
+
+  const lastName =
+    document.getElementById("lastName")?.value.trim() || "";
+
+  const licenseNo =
+    document.getElementById("registrationLicense")?.value.trim() || "";
+
+
+  /* -------------------------------------------------------
+     VALIDATION
+     ------------------------------------------------------- */
 
   if (!firstName) {
-
-    showError('Please enter your First Name.');
-
+    showRegistrationMessage("Please enter your First Name.");
     return;
   }
-
 
   if (!lastName) {
+    showRegistrationMessage("Please enter your Last Name.");
+    return;
+  }
 
-    showError('Please enter your Last Name.');
-
+  if (!licenseNo) {
+    showRegistrationMessage("Please enter your License No.");
     return;
   }
 
 
-  if (!license) {
-
-    showError('Please enter your License No.');
-
-    return;
-  }
+  showLoading(
+    true,
+    "Registering participant..."
+  );
 
 
-  showLoading('Registering participant...');
+  try {
+
+    const result = await apiCall(
+      "registerParticipant",
+      {
+        firstName: firstName,
+        middleName: middleName,
+        lastName: lastName,
+        licenseNo: licenseNo
+      }
+    );
 
 
-  apiRequest(
-    'registerParticipant',
-    {
-      firstName: firstName,
-      middleName: middleName,
-      lastName: lastName,
-      license: license
-    }
-  )
-  .then(result => {
+    if (!result.success) {
 
-    hideLoading();
+      showLoading(false);
 
-
-    if (!result || !result.success) {
-
-      showError(
-        result?.message ||
-        'Registration failed.'
+      showRegistrationMessage(
+        result.message || "Registration failed."
       );
 
       return;
@@ -213,46 +259,39 @@ function registerUser() {
 
 
     /*
-     * Save license locally.
+     * Registration successful.
      */
     localStorage.setItem(
       LICENSE_STORAGE_KEY,
-      license
+      licenseNo
     );
 
-
     currentParticipant = {
-
-      firstName:
-        result.firstName || firstName,
-
-      middleName:
-        result.middleName || middleName,
-
-      lastName:
-        result.lastName || lastName,
-
-      license:
-        result.license || license
-
+      firstName: firstName,
+      middleName: middleName,
+      lastName: lastName,
+      licenseNo: licenseNo
     };
 
 
     /*
-     * If registration was triggered by a QR scan,
-     * automatically record the QR that was already scanned.
+     * Check whether registration was triggered
+     * by scanning a QR code.
      */
     const pendingToken =
-      getPendingQR();
+      localStorage.getItem(PENDING_QR_TOKEN_KEY);
 
 
     if (pendingToken) {
 
-      clearPendingQR();
-
-      recordAttendanceWithToken(
+      /*
+       * DO NOT ASK THE USER TO SCAN AGAIN.
+       *
+       * Use the QR token that was already scanned.
+       */
+      await recordAttendanceWithToken(
         pendingToken,
-        license
+        licenseNo
       );
 
       return;
@@ -261,107 +300,143 @@ function registerUser() {
 
     /*
      * Normal direct registration.
-     * Start scanner after registration.
+     *
+     * After registration, open scanner.
      */
-    showPage('scannerPage');
+    showLoading(false);
 
-    updateScannerStatus(
-      'Registration successful. Scan the attendance QR code.'
-    );
+    showSuccess({
+      success: true,
+      registrationOnly: true,
+      message:
+        "Registration successful. You may now scan the attendance QR code."
+    });
 
-
-    setTimeout(() => {
-      startScanner();
-    }, 300);
-
-  })
-  .catch(error => {
-
-    hideLoading();
+  } catch (error) {
 
     console.error(error);
 
-    showError(
-      'Unable to connect to the attendance server.'
+    showLoading(false);
+
+    showRegistrationMessage(
+      error.message || "Unable to complete registration."
     );
-
-  });
-
+  }
 }
 
 
-/* ============================================================
-   QR SCANNER
-   ============================================================ */
+/* =========================================================
+   REGISTRATION MESSAGE
+   ========================================================= */
 
-function startScanner() {
+function showRegistrationMessage(message) {
+
+  const note =
+    document.getElementById("registrationNote");
+
+  if (note) {
+    note.innerHTML =
+      "⚠️ " + escapeHTML(message);
+  }
+}
+
+
+/* =========================================================
+   START SCANNER
+   ========================================================= */
+
+async function startScanner() {
 
   if (scannerRunning) {
     return;
   }
 
+  /*
+   * Stop an old scanner instance first.
+   */
+  await stopScanner();
 
-  if (typeof Html5Qrcode === 'undefined') {
 
-    updateScannerStatus(
-      'QR scanner is still loading. Please wait...'
-    );
+  const reader =
+    document.getElementById("reader");
 
-    setTimeout(startScanner, 500);
-
+  if (!reader) {
+    console.error("QR reader element not found.");
     return;
   }
 
+  reader.innerHTML = "";
 
-  const readerElement =
-    getPage('reader');
 
-  if (!readerElement) {
-    return;
+  const status =
+    document.getElementById("scannerStatus");
+
+
+  if (status) {
+    status.innerHTML =
+      "📷 <strong>Starting camera...</strong>";
   }
 
 
-  readerElement.innerHTML = '';
+  try {
+
+    if (
+      typeof Html5Qrcode === "undefined"
+    ) {
+
+      throw new Error(
+        "QR scanner library failed to load."
+      );
+    }
 
 
-  html5QrCode =
-    new Html5Qrcode('reader');
+    scanner =
+      new Html5Qrcode("reader");
 
 
-  const config = {
-
-    fps: 10,
-
-    qrbox: function(viewfinderWidth, viewfinderHeight) {
-
-      const minEdge =
-        Math.min(
-          viewfinderWidth,
-          viewfinderHeight
-        );
-
-      const size =
-        Math.floor(minEdge * 0.70);
-
-      return {
-        width: size,
-        height: size
-      };
-    },
-
-    aspectRatio: 1.0
-
-  };
+    const cameras =
+      await Html5Qrcode.getCameras();
 
 
-  html5QrCode
-    .start(
+    if (!cameras || cameras.length === 0) {
+
+      throw new Error(
+        "No camera was found on this device."
+      );
+    }
+
+
+    /*
+     * Prefer rear/environment camera.
+     */
+    let cameraId =
+      cameras[0].id;
+
+    const rearCamera =
+      cameras.find(camera =>
+        /back|rear|environment/i.test(
+          camera.label || ""
+        )
+      );
+
+    if (rearCamera) {
+      cameraId = rearCamera.id;
+    }
+
+
+    await scanner.start(
+      cameraId,
 
       {
-        facingMode: 'environment'
-      },
+        fps: 10,
 
-      config,
+        qrbox: {
+          width: 250,
+          height: 250
+        },
+
+        aspectRatio: 1.0
+      },
 
       decodedText => {
 
@@ -369,51 +444,58 @@ function startScanner() {
 
       },
 
-      errorMessage => {
-
+      () => {
         /*
-         * Scanner continuously reports unsuccessful
-         * frames. We intentionally do not show these
-         * as errors to the user.
+         * Ignore normal QR scan failures.
          */
-
       }
+    );
 
-    )
-    .then(() => {
 
-      scannerRunning = true;
+    scannerRunning = true;
 
-      updateScannerStatus(
-        'Scanner ready. Point the camera at the QR code.'
-      );
 
-    })
-    .catch(error => {
+    if (status) {
 
-      console.error(
-        'Camera error:',
-        error
-      );
+      status.innerHTML =
+        "📷 <strong>Camera ready</strong><br>" +
+        "Scan the INSET 2026 attendance QR code.";
+    }
 
-      scannerRunning = false;
+  } catch (error) {
 
-      updateScannerStatus(
-        'Unable to access the camera. Please allow camera permission and try again.'
-      );
+    console.error(
+      "Scanner error:",
+      error
+    );
 
-    });
+    scannerRunning = false;
 
+    scanner = null;
+
+    if (status) {
+
+      status.innerHTML =
+        "❌ " +
+        escapeHTML(
+          error.message ||
+          "Unable to access the camera."
+        );
+    }
+
+  }
 }
 
 
-/* ============================================================
+/* =========================================================
    STOP SCANNER
-   ============================================================ */
+   ========================================================= */
 
-function stopScanner() {
+async function stopScanner() {
 
-  if (!html5QrCode) {
+  const activeScanner = scanner;
+
+  if (!activeScanner) {
 
     scannerRunning = false;
 
@@ -421,746 +503,1093 @@ function stopScanner() {
   }
 
 
-  if (!scannerRunning) {
+  scanner = null;
 
-    html5QrCode = null;
+  scannerRunning = false;
 
-    return;
+
+  try {
+
+    await activeScanner.stop();
+
+  } catch (error) {
+
+    console.warn(
+      "Scanner stop warning:",
+      error
+    );
   }
 
 
   try {
 
-    html5QrCode
-      .stop()
-      .then(() => {
+    await activeScanner.clear();
 
-        scannerRunning = false;
+  } catch (error) {
 
-        html5QrCode = null;
-
-      })
-      .catch(error => {
-
-        console.warn(
-          'Scanner stop warning:',
-          error
-        );
-
-        scannerRunning = false;
-
-        html5QrCode = null;
-
-      });
-
+    console.warn(
+      "Scanner clear warning:",
+      error
+    );
   }
-  catch (error) {
-
-    console.warn(error);
-
-    scannerRunning = false;
-
-    html5QrCode = null;
-
-  }
-
 }
 
 
-/* ============================================================
-   SCANNER STATUS
-   ============================================================ */
+/* =========================================================
+   PROCESS QR CODE
+   ========================================================= */
 
-function updateScannerStatus(message) {
+async function processQRCode(qrText) {
 
-  const element =
-    getPage('scannerStatus');
-
-  if (element) {
-    element.textContent = message;
-  }
-
-}
-
-
-/* ============================================================
-   QR PROCESSING
-   ============================================================ */
-
-function processQRCode(qrText) {
-
-  if (!qrText) {
+  /*
+   * Prevent multiple reads of the same QR
+   * while the server request is processing.
+   */
+  if (scannerProcessing) {
     return;
   }
+
+  scannerProcessing = true;
+
+
+  try {
+
+    const token =
+      extractQRToken(qrText);
+
+
+    if (!token) {
+
+      scannerProcessing = false;
+
+      showError(
+        "Invalid QR code. Please scan the INSET 2026 attendance QR code."
+      );
+
+      return;
+    }
+
+
+    /*
+     * Stop camera immediately after successful detection.
+     */
+    await stopScanner();
+
+
+    /*
+     * Check saved license.
+     */
+    const savedLicense =
+      localStorage.getItem(
+        LICENSE_STORAGE_KEY
+      );
+
+
+    if (!savedLicense) {
+
+      /*
+       * USER IS NOT REGISTERED.
+       *
+       * Save the QR token so registration
+       * can automatically record this scan.
+       */
+      localStorage.setItem(
+        PENDING_QR_TOKEN_KEY,
+        token
+      );
+
+
+      const licenseInput =
+        document.getElementById(
+          "registrationLicense"
+        );
+
+      if (licenseInput) {
+        licenseInput.value = "";
+      }
+
+
+      scannerProcessing = false;
+
+      openRegistrationPage(false);
+
+      return;
+    }
+
+
+    /*
+     * User is already registered.
+     *
+     * Record attendance immediately.
+     */
+    await recordAttendanceWithToken(
+      token,
+      savedLicense
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    scannerProcessing = false;
+
+    showError(
+      error.message ||
+      "Unable to process the QR code."
+    );
+  }
+}
+
+
+/* =========================================================
+   EXTRACT TOKEN FROM QR
+   ========================================================= */
+
+function extractQRToken(qrText) {
+
+  if (!qrText) {
+    return null;
+  }
+
+  const text =
+    String(qrText).trim();
 
 
   /*
-   * Prevent multiple detections of the same QR
-   * while processing.
+   * QR contains:
+   *
+   * https://script.google.com/.../exec?token=XXXX
    */
-  if (window.qrProcessing === true) {
-    return;
-  }
-
-  window.qrProcessing = true;
-
-
-  let token = '';
-
-
   try {
 
     const url =
-      new URL(qrText);
+      new URL(text);
 
-    token =
-      url.searchParams.get('token') || '';
+    const token =
+      url.searchParams.get("token");
 
-  }
-  catch (error) {
+    if (token) {
+      return token;
+    }
+
+  } catch (error) {
 
     /*
-     * Fallback for a raw token.
+     * Not a URL.
+     * Treat it as a raw token below.
      */
-    token =
-      String(qrText).trim();
-
-  }
-
-
-  if (!token) {
-
-    window.qrProcessing = false;
-
-    showError(
-      'Invalid attendance QR code.'
-    );
-
-    return;
-  }
-
-
-  stopScanner();
-
-
-  const savedLicense =
-    localStorage.getItem(
-      LICENSE_STORAGE_KEY
-    );
-
-
-  /*
-   * If the participant has not registered,
-   * temporarily save the QR token and open registration.
-   */
-  if (!savedLicense) {
-
-    savePendingQR(token);
-
-    showRegistrationFromQR();
-
-    window.qrProcessing = false;
-
-    return;
   }
 
 
   /*
-   * A license exists locally.
-   * Ask the server whether the participant still exists.
+   * Also support raw token QR.
    */
-  recordAttendanceWithToken(
-    token,
-    savedLicense
-  );
-
-}
-
-
-/* ============================================================
-   REGISTRATION TRIGGERED BY QR
-   ============================================================ */
-
-function showRegistrationFromQR() {
-
-  resetRegistrationForm();
-
-  const note =
-    getPage('registrationNote');
-
-
-  if (note) {
-
-    note.innerHTML =
-      '<strong>QR SCAN DETECTED.</strong><br>' +
-      'You are not yet registered. Complete the registration below and your scanned QR code will automatically be recorded.';
-
+  if (
+    text &&
+    !text.includes(" ") &&
+    text.length >= 10
+  ) {
+    return text;
   }
 
 
-  showPage('registrationPage');
-
+  return null;
 }
 
 
-/* ============================================================
+/* =========================================================
    RECORD ATTENDANCE
-   ============================================================ */
+   ========================================================= */
 
-function recordAttendanceWithToken(
+async function recordAttendanceWithToken(
   token,
-  license
+  licenseNo
 ) {
 
   showLoading(
-    'Recording attendance...'
+    true,
+    "Recording attendance..."
   );
 
 
-  apiRequest(
-    'recordAttendance',
-    {
-      token: token,
-      license: license
-    }
-  )
-  .then(result => {
+  try {
 
-    hideLoading();
+    const result =
+      await apiCall(
+        "recordAttendance",
+        {
+          token: token,
+          licenseNo: licenseNo
+        }
+      );
 
 
-    if (!result || !result.success) {
+    /*
+     * Registration is required.
+     *
+     * The backend may return either
+     * registrationRequired:true
+     * OR a "register first" message.
+     */
+    const registrationRequired =
+      result &&
+      (
+        result.registrationRequired === true ||
+        /participant not found|register first/i.test(
+          result.message || ""
+        )
+      );
+
+
+    if (registrationRequired) {
+
+      showLoading(false);
+
 
       /*
-       * The QR itself may be valid, but the participant
-       * may no longer exist in the database.
+       * The saved license is no longer valid.
        */
-      if (
-        result &&
-        result.registrationRequired
-      ) {
+      localStorage.removeItem(
+        LICENSE_STORAGE_KEY
+      );
 
-        localStorage.removeItem(
-          LICENSE_STORAGE_KEY
+      currentParticipant = null;
+
+
+      /*
+       * Preserve the QR token.
+       *
+       * The user will register and this exact
+       * QR scan will be processed automatically.
+       */
+      localStorage.setItem(
+        PENDING_QR_TOKEN_KEY,
+        token
+      );
+
+
+      const licenseInput =
+        document.getElementById(
+          "registrationLicense"
         );
 
-        savePendingQR(token);
+      if (licenseInput) {
+        licenseInput.value = "";
+      }
 
-        const returnedLicense =
-          result.license || license;
+
+      scannerProcessing = false;
+
+      openRegistrationPage(false);
+
+      return;
+    }
 
 
-        if (returnedLicense) {
+    /*
+     * Attendance successfully recorded.
+     */
+    if (result.success) {
 
-          const licenseField =
-            getPage('registrationLicense');
+      localStorage.removeItem(
+        PENDING_QR_TOKEN_KEY
+      );
 
-          if (licenseField) {
-            licenseField.value =
-              returnedLicense;
-          }
+      showLoading(false);
 
+      scannerProcessing = false;
+
+      showSuccess(result);
+
+      return;
+    }
+
+
+    /*
+     * QR was invalid, expired, already used,
+     * wrong date, etc.
+     */
+    localStorage.removeItem(
+      PENDING_QR_TOKEN_KEY
+    );
+
+    showLoading(false);
+
+    scannerProcessing = false;
+
+    showError(
+      result.message ||
+      "Attendance could not be recorded."
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    showLoading(false);
+
+    scannerProcessing = false;
+
+    showError(
+      error.message ||
+      "Unable to connect to the attendance server."
+    );
+  }
+}
+
+
+/* =========================================================
+   SUCCESS SCREEN
+   ========================================================= */
+
+function showSuccess(result) {
+
+  const details =
+    document.getElementById(
+      "successDetails"
+    );
+
+  const message =
+    document.getElementById(
+      "successMessage"
+    );
+
+
+  if (message) {
+
+    message.innerHTML =
+      escapeHTML(
+        result.message ||
+        "Attendance recorded successfully."
+      );
+  }
+
+
+  if (details) {
+
+    let html = "";
+
+
+    if (result.mode) {
+
+      html +=
+        "<strong>" +
+        escapeHTML(
+          String(result.mode)
+        ) +
+        "</strong><br>";
+    }
+
+
+    if (result.date) {
+
+      html +=
+        "Date: " +
+        escapeHTML(
+          formatDisplayDate(result.date)
+        ) +
+        "<br>";
+    }
+
+
+    if (result.time) {
+
+      html +=
+        "Time: " +
+        escapeHTML(
+          formatDisplayTime(result.time)
+        ) +
+        "<br>";
+    }
+
+
+    if (
+      result.firstName ||
+      result.lastName
+    ) {
+
+      html +=
+        "Participant: " +
+        escapeHTML(
+          [
+            result.firstName,
+            result.middleName,
+            result.lastName
+          ]
+          .filter(Boolean)
+          .join(" ")
+        );
+    }
+
+
+    details.innerHTML = html;
+  }
+
+
+  showPage("successPage");
+}
+
+
+/* =========================================================
+   ERROR SCREEN
+   ========================================================= */
+
+function showError(message) {
+
+  const errorMessage =
+    document.getElementById(
+      "errorMessage"
+    );
+
+
+  if (errorMessage) {
+
+    errorMessage.innerHTML =
+      escapeHTML(
+        message ||
+        "Something went wrong."
+      );
+  }
+
+
+  showPage("errorPage");
+}
+
+
+/* =========================================================
+   API CALL
+   ========================================================= */
+
+async function apiCall(
+  action,
+  data = {}
+) {
+
+  const url =
+    API_URL +
+    "?action=" +
+    encodeURIComponent(action) +
+    "&data=" +
+    encodeURIComponent(
+      JSON.stringify(data)
+    );
+
+
+  const response =
+    await fetch(
+      url,
+      {
+        method: "GET",
+        cache: "no-store"
+      }
+    );
+
+
+  if (!response.ok) {
+
+    throw new Error(
+      "Server returned HTTP " +
+      response.status
+    );
+  }
+
+
+  const text =
+    await response.text();
+
+
+  let result;
+
+
+  try {
+
+    result =
+      JSON.parse(text);
+
+  } catch (error) {
+
+    console.error(
+      "Invalid server response:",
+      text
+    );
+
+    throw new Error(
+      "Invalid response from the attendance server."
+    );
+  }
+
+
+  return result;
+}
+
+
+/* =========================================================
+   ADMIN LOGIN
+   ========================================================= */
+
+function openAdminLogin() {
+
+  showPage("adminLoginPage");
+
+  setAdminDefaults();
+}
+
+
+/* Compatibility alias */
+function showAdminLogin() {
+
+  openAdminLogin();
+}
+
+
+/* =========================================================
+   ADMIN LOGIN CHECK
+   ========================================================= */
+
+async function checkAdminPassword() {
+
+  const passwordInput =
+    document.getElementById(
+      "adminPassword"
+    );
+
+
+  if (!passwordInput) {
+    return;
+  }
+
+
+  const password =
+    passwordInput.value.trim();
+
+
+  if (!password) {
+
+    showAdminMessage(
+      "Please enter the admin password."
+    );
+
+    return;
+  }
+
+
+  showLoading(
+    true,
+    "Checking admin access..."
+  );
+
+
+  try {
+
+    const result =
+      await apiCall(
+        "adminLogin",
+        {
+          password: password
         }
+      );
 
 
-        showRegistrationFromQR();
+    showLoading(false);
+
+
+    if (!result.success) {
+
+      showAdminMessage(
+        result.message ||
+        "Invalid admin password."
+      );
+
+      return;
+    }
+
+
+    /*
+     * Login successful.
+     */
+    showPage("adminPage");
+
+    setAdminDefaults();
+
+    clearQR();
+
+    loadAttendanceSummary();
+
+  } catch (error) {
+
+    console.error(error);
+
+    showLoading(false);
+
+    showAdminMessage(
+      error.message ||
+      "Unable to connect to server."
+    );
+  }
+}
+
+
+/* Compatibility alias */
+async function adminLogin(event) {
+
+  if (event) {
+    event.preventDefault();
+  }
+
+  await checkAdminPassword();
+}
+
+
+/* =========================================================
+   ADMIN MESSAGE
+   ========================================================= */
+
+function showAdminMessage(message) {
+
+  const passwordInput =
+    document.getElementById(
+      "adminPassword"
+    );
+
+
+  /*
+   * Look for an existing message element.
+   */
+  let messageElement =
+    document.getElementById(
+      "adminLoginMessage"
+    );
+
+
+  /*
+   * If it does not exist, create one.
+   */
+  if (!messageElement && passwordInput) {
+
+    messageElement =
+      document.createElement("div");
+
+    messageElement.id =
+      "adminLoginMessage";
+
+    messageElement.style.marginTop =
+      "10px";
+
+    messageElement.style.textAlign =
+      "center";
+
+    passwordInput.parentElement.appendChild(
+      messageElement
+    );
+  }
+
+
+  if (messageElement) {
+
+    messageElement.textContent =
+      "⚠️ " + message;
+  }
+}
+
+
+/* =========================================================
+   ADMIN DEFAULTS
+   ========================================================= */
+
+function setAdminDefaults() {
+
+  const dateInput =
+    document.getElementById(
+      "attendanceDate"
+    );
+
+
+  if (!dateInput) {
+    return;
+  }
+
+
+  /*
+   * Default to Day 1.
+   */
+  if (!dateInput.value) {
+
+    dateInput.value =
+      EVENT_START;
+  }
+
+
+  updateQRStatus();
+}
+
+
+/* =========================================================
+   SELECT QR DAY
+   ========================================================= */
+
+function selectQRDay(date) {
+
+  const dateInput =
+    document.getElementById(
+      "attendanceDate"
+    );
+
+
+  if (!dateInput) {
+    return;
+  }
+
+
+  if (
+    date < EVENT_START ||
+    date > EVENT_END
+  ) {
+
+    showQRStatus(
+      "Invalid INSET 2026 date."
+    );
+
+    return;
+  }
+
+
+  dateInput.value = date;
+
+
+  /*
+   * Clear previous generated QR.
+   */
+  generatedQR = null;
+
+
+  const container =
+    document.getElementById(
+      "qrContainer"
+    );
+
+  if (container) {
+    container.innerHTML = "";
+  }
+
+
+  const downloadButton =
+    document.getElementById(
+      "downloadQrButton"
+    );
+
+  if (downloadButton) {
+    downloadButton.disabled = true;
+  }
+
+
+  updateQRStatus();
+}
+
+
+/* =========================================================
+   GENERATE QR
+   ========================================================= */
+
+async function generateQR(mode) {
+
+  const dateInput =
+    document.getElementById(
+      "attendanceDate"
+    );
+
+
+  const attendanceDate =
+    dateInput?.value || EVENT_START;
+
+
+  if (
+    attendanceDate < EVENT_START ||
+    attendanceDate > EVENT_END
+  ) {
+
+    showQRStatus(
+      "Please select a valid INSET 2026 date."
+    );
+
+    return;
+  }
+
+
+  if (
+    mode !== "TIME-IN" &&
+    mode !== "TIME-OUT"
+  ) {
+
+    showQRStatus(
+      "Invalid attendance mode."
+    );
+
+    return;
+  }
+
+
+  showLoading(
+    true,
+    "Generating " + mode + " QR code..."
+  );
+
+
+  showQRStatus(
+    "Generating " +
+    mode +
+    " QR code for " +
+    formatDisplayDate(attendanceDate) +
+    "..."
+  );
+
+
+  try {
+
+    const result =
+      await apiCall(
+        "generateQR",
+        {
+          mode: mode,
+          attendanceDate: attendanceDate
+        }
+      );
+
+
+    showLoading(false);
+
+
+    if (!result.success) {
+
+      showQRStatus(
+        result.message ||
+        "Unable to generate QR code."
+      );
+
+      return;
+    }
+
+
+    generatedQR = result;
+
+
+    await displayQRCode(result);
+
+  } catch (error) {
+
+    console.error(error);
+
+    showLoading(false);
+
+    showQRStatus(
+      error.message ||
+      "Unable to generate QR code."
+    );
+  }
+}
+
+
+/* =========================================================
+   QR CODE LIBRARY LOADER
+   =========================================================
+   We dynamically load QRCode.js so the existing
+   index.html does not need another manual edit.
+   ========================================================= */
+
+function ensureQRCodeLibrary() {
+
+  return new Promise(
+    (resolve, reject) => {
+
+      if (
+        typeof QRCode !== "undefined"
+      ) {
+
+        resolve();
 
         return;
       }
 
 
-      showError(
-        result?.message ||
-        'Attendance could not be recorded.'
+      const existing =
+        document.querySelector(
+          'script[data-inset-qrcode="true"]'
+        );
+
+
+      if (existing) {
+
+        existing.addEventListener(
+          "load",
+          resolve
+        );
+
+        existing.addEventListener(
+          "error",
+          () => reject(
+            new Error(
+              "QR generator library failed to load."
+            )
+          )
+        );
+
+        return;
+      }
+
+
+      const script =
+        document.createElement("script");
+
+
+      script.src =
+        "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+
+
+      script.async = true;
+
+      script.dataset.insetQrcode =
+        "true";
+
+
+      script.onload = () => resolve();
+
+      script.onerror = () => {
+
+        reject(
+          new Error(
+            "Unable to load QR generator library."
+          )
+        );
+      };
+
+
+      document.head.appendChild(
+        script
       );
-
-      return;
     }
-
-
-    /*
-     * Successful attendance.
-     */
-    clearPendingQR();
-
-    showAttendanceSuccess(result);
-
-  })
-  .catch(error => {
-
-    hideLoading();
-
-    console.error(error);
-
-    showError(
-      'Unable to connect to the attendance server.'
-    );
-
-  })
-  .finally(() => {
-
-    window.qrProcessing = false;
-
-  });
-
-}
-
-
-/* ============================================================
-   SUCCESS
-   ============================================================ */
-
-function showAttendanceSuccess(result) {
-
-  const successMessage =
-    getPage('successMessage');
-
-  const successDetails =
-    getPage('successDetails');
-
-
-  const mode =
-    result.mode ||
-    result.attendanceMode ||
-    'ATTENDANCE';
-
-
-  if (successMessage) {
-
-    successMessage.innerHTML =
-      `<strong>${escapeHTML(mode)}</strong> successfully recorded.`;
-
-  }
-
-
-  if (successDetails) {
-
-    const participant =
-      result.participant || {};
-
-    const name =
-      result.name ||
-      participant.name ||
-      buildParticipantName(
-        participant
-      );
-
-
-    const date =
-      result.attendanceDate ||
-      result.date ||
-      '';
-
-
-    const time =
-      result.attendanceTime ||
-      result.time ||
-      '';
-
-
-    let html = '';
-
-
-    if (name) {
-
-      html +=
-        `<div><strong>Participant:</strong> ${escapeHTML(name)}</div>`;
-
-    }
-
-
-    if (date) {
-
-      html +=
-        `<div><strong>Date:</strong> ${escapeHTML(formatDateForDisplay(date))}</div>`;
-
-    }
-
-
-    if (time) {
-
-      html +=
-        `<div><strong>Time:</strong> ${escapeHTML(time)}</div>`;
-
-    }
-
-
-    successDetails.innerHTML = html;
-
-  }
-
-
-  showPage('successPage');
-
-}
-
-
-/* ============================================================
-   ADMIN LOGIN
-   ============================================================ */
-
-function openAdminLogin() {
-
-  stopScanner();
-
-  const password =
-    getPage('adminPassword');
-
-  if (password) {
-    password.value = '';
-  }
-
-  showPage('adminLoginPage');
-
-}
-
-
-function showAdminLogin() {
-  openAdminLogin();
-}
-
-
-function checkAdminPassword() {
-
-  const password =
-    getPage('adminPassword')?.value || '';
-
-
-  if (!password) {
-
-    showError(
-      'Please enter the admin password.'
-    );
-
-    return;
-  }
-
-
-  showLoading(
-    'Checking admin access...'
   );
-
-
-  apiRequest(
-    'checkAdminPassword',
-    {
-      password: password
-    }
-  )
-  .then(result => {
-
-    hideLoading();
-
-
-    if (!result || !result.success) {
-
-      showError(
-        result?.message ||
-        'Invalid admin password.'
-      );
-
-      return;
-    }
-
-
-    showAdminPage();
-
-  })
-  .catch(error => {
-
-    hideLoading();
-
-    console.error(error);
-
-    showError(
-      'Unable to connect to the attendance server.'
-    );
-
-  });
-
 }
 
 
-/* ============================================================
-   ADMIN PAGE
-   ============================================================ */
+/* =========================================================
+   DISPLAY GENERATED QR
+   ========================================================= */
 
-function showAdminPage() {
-
-  showPage('adminPage');
-
-  clearQR();
-
-}
-
-
-/* ============================================================
-   SELECT QR DAY
-   ============================================================ */
-
-function selectQRDay(date) {
-
-  selectedQRDay = date;
-
-
-  const dateField =
-    getPage('attendanceDate');
-
-  if (dateField) {
-    dateField.value = date;
-  }
-
-
-  /*
-   * Clear previous generated QR when changing day.
-   */
-  clearQRDisplayOnly();
-
-}
-
-
-/* ============================================================
-   GENERATE QR
-   ============================================================ */
-
-function generateQR(mode) {
-
-  const dateField =
-    getPage('attendanceDate');
-
-
-  const attendanceDate =
-    dateField?.value ||
-    selectedQRDay ||
-    '2026-09-09';
-
-
-  selectedQRDay =
-    attendanceDate;
-
-
-  if (
-    mode !== 'TIME-IN' &&
-    mode !== 'TIME-OUT'
-  ) {
-
-    showQRStatus(
-      'Invalid attendance mode.',
-      true
-    );
-
-    return;
-  }
-
-
-  showLoading(
-    `Generating ${mode} QR code...`
-  );
-
-
-  apiRequest(
-    'generateQR',
-    {
-      mode: mode,
-      attendanceDate: attendanceDate
-    }
-  )
-  .then(result => {
-
-    hideLoading();
-
-
-    if (!result || !result.success) {
-
-      showQRStatus(
-        result?.message ||
-        'Unable to generate QR code.',
-        true
-      );
-
-      return;
-    }
-
-
-    generatedQRData = result;
-
-
-    displayQRCode(result);
-
-
-  })
-  .catch(error => {
-
-    hideLoading();
-
-    console.error(error);
-
-    showQRStatus(
-      'Unable to connect to the attendance server.',
-      true
-    );
-
-  });
-
-}
-
-
-/* ============================================================
-   DISPLAY QR
-   ============================================================ */
-
-function displayQRCode(result) {
+async function displayQRCode(result) {
 
   const container =
-    getPage('qrContainer');
+    document.getElementById(
+      "qrContainer"
+    );
 
 
   if (!container) {
-    return;
-  }
 
-
-  container.innerHTML = '';
-
-
-  const wrapper =
-    document.createElement('div');
-
-  wrapper.className =
-    'generated-qr-wrapper';
-
-
-  const day =
-    result.day ||
-    getDayNumber(
-      result.attendanceDate ||
-      result.date
+    throw new Error(
+      "QR container was not found."
     );
-
-
-  const mode =
-    result.mode ||
-    'ATTENDANCE';
-
-
-  const date =
-    result.attendanceDate ||
-    result.date ||
-    '';
+  }
 
 
   const qrUrl =
     result.qrUrl ||
-    result.url ||
-    '';
+    result.url;
 
 
-  const title =
-    document.createElement('div');
+  if (!qrUrl) {
 
-  title.className =
-    'generated-qr-title';
-
-  title.innerHTML =
-    `<strong>DAY ${escapeHTML(String(day))}</strong> — ${escapeHTML(mode)}`;
+    throw new Error(
+      "QR URL was not returned by the server."
+    );
+  }
 
 
-  const dateText =
-    document.createElement('div');
+  try {
 
-  dateText.className =
-    'generated-qr-date';
+    await ensureQRCodeLibrary();
 
-  dateText.textContent =
-    formatDateForDisplay(date);
+  } catch (error) {
+
+    showQRStatus(
+      error.message
+    );
+
+    return;
+  }
 
 
-  const qrImage =
-    document.createElement('img');
-
-  qrImage.className =
-    'generated-qr-image';
-
-  qrImage.alt =
-    `INSET 2026 Day ${day} ${mode} QR Code`;
+  container.innerHTML = "";
 
 
   /*
-   * Generate a client-side QR image using a public QR
-   * rendering service.
-   *
-   * The actual secure attendance token is contained
-   * in qrUrl.
+   * Create QR image.
    */
-  qrImage.src =
-    buildQRImageURL(qrUrl);
+  new QRCode(
+    container,
+    {
+      text: qrUrl,
 
+      width: 280,
+      height: 280,
 
-  const validity =
-    document.createElement('div');
+      colorDark: "#000000",
+      colorLight: "#ffffff",
 
-  validity.className =
-    'generated-qr-validity';
-
-
-  const validFrom =
-    result.validFrom
-      ? formatDateTimeForDisplay(
-          result.validFrom
-        )
-      : '';
-
-
-  const expiresAt =
-    result.expiresAt
-      ? formatDateTimeForDisplay(
-          result.expiresAt
-        )
-      : '';
-
-
-  validity.innerHTML =
-    `
-      <div>
-        <strong>Valid for:</strong>
-        ${escapeHTML(
-          String(
-            result.validityHours || 24
-          )
-        )} hours
-      </div>
-
-      ${
-        validFrom
-          ? `<div><strong>Valid from:</strong> ${escapeHTML(validFrom)}</div>`
-          : ''
-      }
-
-      ${
-        expiresAt
-          ? `<div><strong>Expires:</strong> ${escapeHTML(expiresAt)}</div>`
-          : ''
-      }
-    `;
-
-
-  wrapper.appendChild(title);
-
-  wrapper.appendChild(dateText);
-
-  wrapper.appendChild(qrImage);
-
-  wrapper.appendChild(validity);
-
-
-  container.appendChild(wrapper);
+      correctLevel:
+        QRCode.CorrectLevel.H
+    }
+  );
 
 
   /*
-   * Activate download button.
+   * Give QRCode.js a moment to render.
    */
+  await new Promise(
+    resolve =>
+      setTimeout(resolve, 200)
+  );
+
+
+  const day =
+    result.day ||
+    getInsetDayNumber(
+      result.attendanceDate
+    );
+
+
+  const mode =
+    result.mode ||
+    "TIME-IN";
+
+
+  const date =
+    result.attendanceDate ||
+    result.date;
+
+
+  const filename =
+    "INSET2026_DAY" +
+    day +
+    "_" +
+    mode.replace(
+      /[^A-Z0-9-]/gi,
+      "-"
+    ) +
+    "_" +
+    date +
+    ".png";
+
+
+  generatedQR = {
+    ...result,
+    qrUrl: qrUrl,
+    filename: filename
+  };
+
+
   const downloadButton =
-    getPage('downloadQrButton');
+    document.getElementById(
+      "downloadQrButton"
+    );
 
 
   if (downloadButton) {
@@ -1169,407 +1598,52 @@ function displayQRCode(result) {
       false;
 
     downloadButton.textContent =
-      '⬇️ DOWNLOAD QR CODE';
-
+      "⬇️ DOWNLOAD QR CODE";
   }
 
 
-  showQRStatus(
-    `DAY ${day} ${mode} QR generated successfully.`
-  );
-
-}
-
-
-/* ============================================================
-   QR IMAGE URL
-   ============================================================ */
-
-function buildQRImageURL(qrUrl) {
-
-  if (!qrUrl) {
-    return '';
-  }
-
-
-  /*
-   * QRServer generates the PNG image.
-   * The QR itself contains only the secure token URL.
-   */
-  return (
-    'https://api.qrserver.com/v1/create-qr-code/' +
-    '?size=800x800' +
-    '&margin=20' +
-    '&data=' +
-    encodeURIComponent(qrUrl)
-  );
-
-}
-
-
-/* ============================================================
-   DOWNLOAD GENERATED QR
-   ============================================================ */
-
-async function downloadGeneratedQR() {
-
-  if (!generatedQRData) {
-
-    showQRStatus(
-      'Please generate a QR code first.',
-      true
-    );
-
-    return;
-  }
-
-
-  const qrUrl =
-    generatedQRData.qrUrl ||
-    generatedQRData.url ||
-    '';
-
-
-  if (!qrUrl) {
-
-    showQRStatus(
-      'QR code URL is missing.',
-      true
-    );
-
-    return;
-  }
-
-
-  const mode =
-    generatedQRData.mode ||
-    'ATTENDANCE';
-
-
-  const date =
-    generatedQRData.attendanceDate ||
-    generatedQRData.date ||
-    selectedQRDay;
-
-
-  const day =
-    generatedQRData.day ||
-    getDayNumber(date);
-
-
-  const filename =
-    `INSET2026_DAY${day}_${mode}_${date}.png`;
-
-
-  const imageURL =
-    buildQRImageURL(qrUrl);
-
-
-  const button =
-    getPage('downloadQrButton');
-
-
-  try {
-
-    if (button) {
-
-      button.disabled = true;
-
-      button.textContent =
-        '⏳ PREPARING DOWNLOAD...';
-
-    }
-
-
-    /*
-     * Fetch the generated PNG so the browser can
-     * download it with our desired filename.
-     */
-    const response =
-      await fetch(imageURL);
-
-
-    if (!response.ok) {
-      throw new Error(
-        'QR image download failed.'
-      );
-    }
-
-
-    const blob =
-      await response.blob();
-
-
-    const blobURL =
-      URL.createObjectURL(blob);
-
-
-    const link =
-      document.createElement('a');
-
-    link.href =
-      blobURL;
-
-    link.download =
-      filename;
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    link.remove();
-
-
-    setTimeout(() => {
-
-      URL.revokeObjectURL(blobURL);
-
-    }, 1000);
-
-
-    showQRStatus(
-      `Downloaded: ${filename}`
-    );
-
-  }
-  catch (error) {
-
-    console.error(
-      'QR download error:',
-      error
-    );
-
-
-    /*
-     * Fallback:
-     * Open the QR image directly if browser CORS
-     * restrictions prevent the blob download.
-     */
-    const link =
-      document.createElement('a');
-
-    link.href =
-      imageURL;
-
-    link.target =
-      '_blank';
-
-    link.rel =
-      'noopener noreferrer';
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    link.remove();
-
-
-    showQRStatus(
-      'QR image opened in a new tab. Save the image from there.',
-      true
-    );
-
-  }
-  finally {
-
-    if (button) {
-
-      button.disabled = false;
-
-      button.textContent =
-        '⬇️ DOWNLOAD QR CODE';
-
-    }
-
-  }
-
-}
-
-
-/* ============================================================
-   CLEAR QR
-   ============================================================ */
-
-function clearQR() {
-
-  generatedQRData = null;
-
-  selectedQRDay =
-    '2026-09-09';
-
-
-  const dateField =
-    getPage('attendanceDate');
-
-  if (dateField) {
-    dateField.value =
-      '2026-09-09';
-  }
-
-
-  clearQRDisplayOnly();
-
-
-  showQRStatus('');
-
-}
-
-
-function clearQRDisplayOnly() {
-
-  const container =
-    getPage('qrContainer');
-
-
-  if (container) {
-
-    container.innerHTML =
-
-      `
-      <div class="qr-placeholder">
-
-        <div class="qr-placeholder-icon">
-          ▦
-        </div>
-
-        <p>
-          Select a day and generate a QR code.
-        </p>
-
-      </div>
-      `;
-
-  }
-
-
-  const button =
-    getPage('downloadQrButton');
-
-
-  if (button) {
-
-    button.disabled = true;
-
-    button.textContent =
-      '⬇️ DOWNLOAD QR CODE';
-
-  }
-
-}
-
-
-/* ============================================================
-   QR STATUS
-   ============================================================ */
-
-function showQRStatus(
-  message,
-  isError = false
-) {
-
-  const status =
-    getPage('qrStatus');
-
-
-  if (!status) {
-    return;
-  }
-
-
-  status.textContent =
-    message || '';
-
-
-  status.classList.toggle(
-    'error',
-    isError
-  );
-
-}
-
-
-/* ============================================================
-   ATTENDANCE SUMMARY
-   ============================================================ */
-
-function loadAttendanceSummary() {
-
-  const summary =
-    getPage('attendanceSummary');
-
-
-  if (summary) {
-
-    summary.innerHTML =
-      '<div class="summary-loading">Loading attendance...</div>';
-
-  }
-
-
-  showLoading(
-    'Loading attendance summary...'
-  );
-
-
-  apiRequest(
-    'getAttendanceSummary',
-    {}
-  )
-  .then(result => {
-
-    hideLoading();
-
-
-    if (!result || !result.success) {
-
-      if (summary) {
-
-        summary.innerHTML =
-          `<div class="summary-error">${
-            escapeHTML(
-              result?.message ||
-              'Unable to load attendance.'
-            )
-          }</div>`;
-
-      }
-
-      return;
-    }
-
-
-    displayAttendanceSummary(
+  const validityText =
+    getQRValidityText(
       result
     );
 
-  })
-  .catch(error => {
 
-    hideLoading();
-
-    console.error(error);
-
-
-    if (summary) {
-
-      summary.innerHTML =
-        '<div class="summary-error">Unable to connect to the server.</div>';
-
-    }
-
-  });
-
+  showQRStatus(
+    "DAY " +
+    day +
+    " — " +
+    mode +
+    "<br>" +
+    "<strong>" +
+    escapeHTML(
+      formatDisplayDate(date)
+    ) +
+    "</strong><br>" +
+    validityText
+  );
 }
 
 
-/* ============================================================
-   DISPLAY ATTENDANCE SUMMARY
-   ============================================================ */
+/* =========================================================
+   DOWNLOAD GENERATED QR
+   ========================================================= */
 
-function displayAttendanceSummary(result) {
+async function downloadGeneratedQR() {
+
+  if (!generatedQR) {
+
+    showQRStatus(
+      "Please generate a QR code first."
+    );
+
+    return;
+  }
+
 
   const container =
-    getPage('attendanceSummary');
+    document.getElementById(
+      "qrContainer"
+    );
 
 
   if (!container) {
@@ -1577,440 +1651,649 @@ function displayAttendanceSummary(result) {
   }
 
 
-  const rows =
-    result.rows ||
-    result.data ||
-    result.attendance ||
-    [];
+  let dataUrl = null;
 
 
-  if (!Array.isArray(rows) || rows.length === 0) {
-
-    container.innerHTML =
-      '<div class="summary-empty">No attendance records found.</div>';
-
-    return;
-  }
-
-
-  let html =
-    '<div class="summary-table-wrapper">';
-
-  html +=
-    '<table class="summary-table">';
-
-  html +=
-    '<thead>';
-
-  html +=
-    '<tr>' +
-      '<th>Name</th>' +
-      '<th>License</th>' +
-      '<th>Date</th>' +
-      '<th>Time In</th>' +
-      '<th>Time Out</th>' +
-    '</tr>';
-
-  html +=
-    '</thead>';
-
-  html +=
-    '<tbody>';
-
-
-  rows.forEach(row => {
-
-    const firstName =
-      row.firstName ||
-      row['FIRST NAME'] ||
-      row[0] ||
-      '';
-
-    const middleName =
-      row.middleName ||
-      row['MIDDLE NAME'] ||
-      row[1] ||
-      '';
-
-    const lastName =
-      row.lastName ||
-      row['LAST NAME'] ||
-      row[2] ||
-      '';
-
-    const date =
-      row.date ||
-      row['DATE'] ||
-      row[3] ||
-      '';
-
-    const license =
-      row.license ||
-      row['LICENSE NO.'] ||
-      row[4] ||
-      '';
-
-    const timeIn =
-      row.timeIn ||
-      row['TIME IN'] ||
-      row[5] ||
-      '';
-
-    const timeOut =
-      row.timeOut ||
-      row['TIME OUT'] ||
-      row[6] ||
-      '';
-
-
-    const name =
-      [
-        firstName,
-        middleName,
-        lastName
-      ]
-      .filter(Boolean)
-      .join(' ');
-
-
-    html +=
-      '<tr>' +
-
-        `<td>${escapeHTML(name)}</td>` +
-
-        `<td>${escapeHTML(String(license))}</td>` +
-
-        `<td>${escapeHTML(
-          formatDateForDisplay(date)
-        )}</td>` +
-
-        `<td>${escapeHTML(
-          String(timeIn || '—')
-        )}</td>` +
-
-        `<td>${escapeHTML(
-          String(timeOut || '—')
-        )}</td>` +
-
-      '</tr>';
-
-  });
-
-
-  html +=
-    '</tbody>';
-
-  html +=
-    '</table>';
-
-  html +=
-    '</div>';
-
-
-  container.innerHTML =
-    html;
-
-}
-
-
-/* ============================================================
-   API REQUEST
-   ============================================================ */
-
-async function apiRequest(
-  action,
-  data = {}
-) {
-
-  const url =
-    API_URL +
-    '?action=' +
-    encodeURIComponent(action) +
-    '&data=' +
-    encodeURIComponent(
-      JSON.stringify(data)
+  /*
+   * QRCode.js normally creates a canvas
+   * and an image.
+   */
+  const canvas =
+    container.querySelector(
+      "canvas"
     );
 
 
-  const response =
-    await fetch(url, {
-      method: 'GET',
-      cache: 'no-store'
-    });
-
-
-  if (!response.ok) {
-
-    throw new Error(
-      `HTTP ${response.status}`
-    );
-
-  }
-
-
-  return await response.json();
-
-}
-
-
-/* ============================================================
-   PENDING QR STORAGE
-   ============================================================ */
-
-function savePendingQR(token) {
-
-  if (!token) {
-    return;
-  }
-
-
-  localStorage.setItem(
-    PENDING_QR_TOKEN_KEY,
-    token
-  );
-
-}
-
-
-function getPendingQR() {
-
-  return localStorage.getItem(
-    PENDING_QR_TOKEN_KEY
-  );
-
-}
-
-
-function clearPendingQR() {
-
-  localStorage.removeItem(
-    PENDING_QR_TOKEN_KEY
-  );
-
-}
-
-
-/* ============================================================
-   ERROR
-   ============================================================ */
-
-function showError(message) {
-
-  stopScanner();
-
-
-  const errorElement =
-    getPage('errorMessage');
-
-
-  if (errorElement) {
-
-    errorElement.textContent =
-      message ||
-      'An unexpected error occurred.';
-
-  }
-
-
-  showPage('errorPage');
-
-}
-
-
-/* ============================================================
-   LOADING
-   ============================================================ */
-
-function showLoading(message) {
-
-  const overlay =
-    getPage('loadingOverlay');
-
-
-  const text =
-    getPage('loadingText');
-
-
-  if (text) {
-
-    text.textContent =
-      message ||
-      'Please wait...';
-
-  }
-
-
-  if (overlay) {
-
-    overlay.classList.add(
-      'active'
-    );
-
-  }
-
-}
-
-
-function hideLoading() {
-
-  const overlay =
-    getPage('loadingOverlay');
-
-
-  if (overlay) {
-
-    overlay.classList.remove(
-      'active'
-    );
-
-  }
-
-}
-
-
-/* ============================================================
-   DATE HELPERS
-   ============================================================ */
-
-function getDayNumber(dateString) {
-
-  const dates = {
-
-    '2026-09-09': 1,
-
-    '2026-09-10': 2,
-
-    '2026-09-11': 3
-
-  };
-
-
-  return dates[dateString] || 1;
-
-}
-
-
-function formatDateForDisplay(dateString) {
-
-  if (!dateString) {
-    return '';
+  if (
+    canvas &&
+    typeof canvas.toDataURL === "function"
+  ) {
+
+    dataUrl =
+      canvas.toDataURL(
+        "image/png"
+      );
   }
 
 
   /*
-   * Handle YYYY-MM-DD without timezone shifting.
+   * Fallback to generated image.
    */
-  if (
-    typeof dateString === 'string' &&
-    /^\d{4}-\d{2}-\d{2}$/.test(dateString)
-  ) {
+  if (!dataUrl) {
 
-    const parts =
-      dateString.split('-');
-
-    const date =
-      new Date(
-        Number(parts[0]),
-        Number(parts[1]) - 1,
-        Number(parts[2])
+    const image =
+      container.querySelector(
+        "img"
       );
 
 
-    return date.toLocaleDateString(
-      'en-US',
+    if (
+      image &&
+      image.src
+    ) {
+
+      dataUrl =
+        image.src;
+    }
+  }
+
+
+  if (!dataUrl) {
+
+    showQRStatus(
+      "QR image is not ready yet. Please try again."
+    );
+
+    return;
+  }
+
+
+  const link =
+    document.createElement("a");
+
+
+  link.href =
+    dataUrl;
+
+
+  link.download =
+    generatedQR.filename ||
+    "INSET2026_QR_CODE.png";
+
+
+  document.body.appendChild(
+    link
+  );
+
+
+  link.click();
+
+
+  document.body.removeChild(
+    link
+  );
+}
+
+
+/* =========================================================
+   QR STATUS
+   ========================================================= */
+
+function showQRStatus(message) {
+
+  const status =
+    document.getElementById(
+      "qrStatus"
+    );
+
+
+  if (status) {
+
+    status.innerHTML =
+      message;
+  }
+}
+
+
+/* =========================================================
+   UPDATE QR STATUS
+   ========================================================= */
+
+function updateQRStatus() {
+
+  const date =
+    document.getElementById(
+      "attendanceDate"
+    )?.value;
+
+
+  if (!date) {
+    return;
+  }
+
+
+  const day =
+    getInsetDayNumber(date);
+
+
+  if (!day) {
+
+    showQRStatus(
+      "Select a valid INSET 2026 date."
+    );
+
+    return;
+  }
+
+
+  showQRStatus(
+    "DAY " +
+    day +
+    " — " +
+    escapeHTML(
+      formatDisplayDate(date)
+    ) +
+    "<br>" +
+    "Select TIME-IN or TIME-OUT to generate the QR code.<br>" +
+    "<strong>Validity: 24 hours</strong>"
+  );
+}
+
+
+/* =========================================================
+   QR VALIDITY TEXT
+   ========================================================= */
+
+function getQRValidityText(result) {
+
+  /*
+   * The backend controls actual validity.
+   *
+   * We display the configured 24-hour validity
+   * here as requested.
+   */
+  if (
+    result.validityHours
+  ) {
+
+    return (
+      "Valid for " +
+      result.validityHours +
+      " hours"
+    );
+  }
+
+
+  return "Valid for 24 hours";
+}
+
+
+/* =========================================================
+   CLEAR QR
+   ========================================================= */
+
+function clearQR() {
+
+  generatedQR = null;
+
+
+  const container =
+    document.getElementById(
+      "qrContainer"
+    );
+
+
+  if (container) {
+    container.innerHTML = "";
+  }
+
+
+  const button =
+    document.getElementById(
+      "downloadQrButton"
+    );
+
+
+  if (button) {
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      "⬇️ DOWNLOAD QR CODE";
+  }
+
+
+  updateQRStatus();
+}
+
+
+/* =========================================================
+   ATTENDANCE SUMMARY
+   ========================================================= */
+
+async function loadAttendanceSummary() {
+
+  const summary =
+    document.getElementById(
+      "attendanceSummary"
+    );
+
+
+  if (!summary) {
+    return;
+  }
+
+
+  summary.innerHTML =
+    "Loading attendance summary...";
+
+
+  try {
+
+    const selectedDate =
+      document.getElementById(
+        "attendanceDate"
+      )?.value || EVENT_START;
+
+
+    const result =
+      await apiCall(
+        "getAttendanceSummary",
+        {
+          selectedDate:
+            selectedDate
+        }
+      );
+
+
+    if (!result.success) {
+
+      summary.innerHTML =
+        escapeHTML(
+          result.message ||
+          "Unable to load attendance summary."
+        );
+
+      return;
+    }
+
+
+    renderAttendanceSummary(
+      result,
+      summary
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    summary.innerHTML =
+      escapeHTML(
+        error.message ||
+        "Unable to load attendance summary."
+      );
+  }
+}
+
+
+/* Compatibility alias */
+async function loadAdminSummary() {
+
+  await loadAttendanceSummary();
+}
+
+
+/* =========================================================
+   RENDER ATTENDANCE SUMMARY
+   ========================================================= */
+
+function renderAttendanceSummary(
+  result,
+  container
+) {
+
+  /*
+   * Support several possible backend
+   * summary structures.
+   */
+
+  if (
+    Array.isArray(result.summary)
+  ) {
+
+    if (
+      result.summary.length === 0
+    ) {
+
+      container.innerHTML =
+        "<p>No attendance records yet.</p>";
+
+      return;
+    }
+
+
+    let html =
+      '<div class="summary-table-wrapper">' +
+      "<table>" +
+      "<thead>" +
+      "<tr>" +
+      "<th>NAME</th>" +
+      "<th>LICENSE</th>" +
+      "<th>TIME IN</th>" +
+      "<th>TIME OUT</th>" +
+      "</tr>" +
+      "</thead>" +
+      "<tbody>";
+
+
+    result.summary.forEach(row => {
+
+      const name =
+        [
+          row.firstName,
+          row.middleName,
+          row.lastName
+        ]
+        .filter(Boolean)
+        .join(" ");
+
+
+      html +=
+        "<tr>" +
+        "<td>" +
+        escapeHTML(name) +
+        "</td>" +
+        "<td>" +
+        escapeHTML(
+          row.licenseNo ||
+          row.license ||
+          ""
+        ) +
+        "</td>" +
+        "<td>" +
+        escapeHTML(
+          row.timeIn ||
+          row.time ||
+          ""
+        ) +
+        "</td>" +
+        "<td>" +
+        escapeHTML(
+          row.timeOut ||
+          ""
+        ) +
+        "</td>" +
+        "</tr>";
+    });
+
+
+    html +=
+      "</tbody></table></div>";
+
+
+    container.innerHTML =
+      html;
+
+    return;
+  }
+
+
+  /*
+   * If backend provides counts.
+   */
+  const total =
+    result.total ??
+    result.totalParticipants ??
+    0;
+
+
+  const timeIn =
+    result.timeIn ??
+    result.timeInCount ??
+    0;
+
+
+  const timeOut =
+    result.timeOut ??
+    result.timeOutCount ??
+    0;
+
+
+  container.innerHTML =
+    "<div>" +
+      "<strong>Total:</strong> " +
+      escapeHTML(String(total)) +
+    "</div>" +
+
+    "<div>" +
+      "<strong>TIME-IN:</strong> " +
+      escapeHTML(String(timeIn)) +
+    "</div>" +
+
+    "<div>" +
+      "<strong>TIME-OUT:</strong> " +
+      escapeHTML(String(timeOut)) +
+    "</div>";
+}
+
+
+/* =========================================================
+   DAY NUMBER
+   ========================================================= */
+
+function getInsetDayNumber(dateString) {
+
+  const dates = [
+    EVENT_START,
+    "2026-09-10",
+    EVENT_END
+  ];
+
+
+  const index =
+    dates.indexOf(dateString);
+
+
+  if (index === -1) {
+    return null;
+  }
+
+
+  return index + 1;
+}
+
+
+/* =========================================================
+   DATE FORMATTING
+   ========================================================= */
+
+function formatDisplayDate(
+  dateString
+) {
+
+  if (!dateString) {
+    return "";
+  }
+
+
+  /*
+   * Handle YYYY-MM-DD without
+   * browser timezone shifting.
+   */
+  const parts =
+    String(dateString)
+      .split("-");
+
+
+  if (parts.length === 3) {
+
+    const year =
+      Number(parts[0]);
+
+    const month =
+      Number(parts[1]);
+
+    const day =
+      Number(parts[2]);
+
+
+    if (
+      year &&
+      month &&
+      day
+    ) {
+
+      const date =
+        new Date(
+          year,
+          month - 1,
+          day
+        );
+
+
+      return date.toLocaleDateString(
+        "en-PH",
+        {
+          month: "long",
+          day: "numeric",
+          year: "numeric"
+        }
+      );
+    }
+  }
+
+
+  /*
+   * Fallback.
+   */
+  try {
+
+    return new Date(
+      dateString
+    ).toLocaleDateString(
+      "en-PH",
       {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
+        month: "long",
+        day: "numeric",
+        year: "numeric"
       }
     );
 
-  }
+  } catch (error) {
 
-
-  const date =
-    new Date(dateString);
-
-
-  if (isNaN(date.getTime())) {
     return String(dateString);
   }
-
-
-  return date.toLocaleDateString(
-    'en-US',
-    {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    }
-  );
-
 }
 
 
-function formatDateTimeForDisplay(
-  value
+/* =========================================================
+   TIME FORMATTING
+   ========================================================= */
+
+function formatDisplayTime(
+  timeValue
 ) {
 
-  if (!value) {
-    return '';
+  if (!timeValue) {
+    return "";
   }
 
 
-  const date =
-    new Date(value);
+  /*
+   * If backend already sends a formatted
+   * time such as 7:58:34 AM, preserve it.
+   */
+  if (
+    typeof timeValue === "string" &&
+    /AM|PM/i.test(timeValue)
+  ) {
 
-
-  if (isNaN(date.getTime())) {
-
-    return String(value);
-
+    return timeValue;
   }
 
 
-  return date.toLocaleString(
-    'en-US',
-    {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit'
+  try {
+
+    const date =
+      new Date(timeValue);
+
+
+    if (!isNaN(date.getTime())) {
+
+      return date.toLocaleTimeString(
+        "en-PH",
+        {
+          hour: "numeric",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+          timeZone: "Asia/Manila"
+        }
+      );
     }
-  );
 
+  } catch (error) {
+    // Use original value below.
+  }
+
+
+  return String(timeValue);
 }
 
 
-/* ============================================================
-   NAME HELPERS
-   ============================================================ */
+/* =========================================================
+   LOADING OVERLAY
+   ========================================================= */
 
-function buildParticipantName(
-  participant
+function showLoading(
+  show,
+  message = "Please wait..."
 ) {
 
-  if (!participant) {
-    return '';
+  const overlay =
+    document.getElementById(
+      "loadingOverlay"
+    );
+
+
+  if (!overlay) {
+    return;
   }
 
 
-  return [
-    participant.firstName,
-    participant.middleName,
-    participant.lastName
-  ]
-  .filter(Boolean)
-  .join(' ');
+  if (show) {
 
+    overlay.classList.add(
+      "active"
+    );
+
+
+    const text =
+      overlay.querySelector(
+        ".loading-text"
+      );
+
+
+    if (text) {
+
+      text.textContent =
+        message;
+    }
+
+
+  } else {
+
+    overlay.classList.remove(
+      "active"
+    );
+  }
 }
 
 
-/* ============================================================
-   HTML ESCAPING
-   ============================================================ */
+/* =========================================================
+   HTML ESCAPE
+   ========================================================= */
 
 function escapeHTML(value) {
 
@@ -2019,115 +2302,91 @@ function escapeHTML(value) {
     value === undefined
   ) {
 
-    return '';
-
+    return "";
   }
 
 
   return String(value)
-
     .replace(
       /&/g,
-      '&amp;'
+      "&amp;"
     )
-
     .replace(
       /</g,
-      '&lt;'
+      "&lt;"
     )
-
     .replace(
       />/g,
-      '&gt;'
+      "&gt;"
     )
-
     .replace(
       /"/g,
-      '&quot;'
+      "&quot;"
     )
-
     .replace(
       /'/g,
-      '&#039;'
+      "&#039;"
     );
-
 }
 
 
-/* ============================================================
-   INITIALIZATION
-   ============================================================ */
+/* =========================================================
+   PAGE LOAD
+   ========================================================= */
 
 document.addEventListener(
-  'DOMContentLoaded',
+  "DOMContentLoaded",
   () => {
 
-    /*
-     * Make sure Home is the initial page.
-     */
-    showPage('homePage');
+    console.log(
+      "INSET 2026 Attendance System loaded."
+    );
 
 
     /*
-     * Enter key support for admin login.
+     * Make sure HOME is displayed.
      */
-    const adminPassword =
-      getPage('adminPassword');
-
-
-    if (adminPassword) {
-
-      adminPassword.addEventListener(
-        'keydown',
-        event => {
-
-          if (event.key === 'Enter') {
-
-            checkAdminPassword();
-
-          }
-
-        }
+    const pages =
+      document.querySelectorAll(
+        ".page"
       );
 
+
+    let activeFound = false;
+
+
+    pages.forEach(page => {
+
+      if (
+        page.classList.contains(
+          "active"
+        )
+      ) {
+
+        activeFound = true;
+      }
+    });
+
+
+    if (!activeFound) {
+
+      const home =
+        document.getElementById(
+          "homePage"
+        );
+
+      if (home) {
+        home.classList.add(
+          "active"
+        );
+      }
     }
 
 
     /*
-     * Enter key support for registration.
+     * Set admin defaults if the
+     * admin date field already exists.
      */
-    [
-      'firstName',
-      'middleName',
-      'lastName',
-      'registrationLicense'
-    ]
-    .forEach(id => {
-
-      const input =
-        getPage(id);
-
-
-      if (input) {
-
-        input.addEventListener(
-          'keydown',
-          event => {
-
-            if (
-              event.key === 'Enter'
-            ) {
-
-              registerUser();
-
-            }
-
-          }
-        );
-
-      }
-
-    });
-
+    setAdminDefaults();
   }
 );
