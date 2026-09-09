@@ -1345,33 +1345,15 @@ input:focus-visible {
   width: 100%;
 }
 
-#maintenancePage.active {
-  display: block !important;
-}
-
 #maintenancePage .result-card {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
   text-align: center;
 }
 
 #maintenancePage .result-icon {
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 20px;
-  visibility: visible !important;
-  opacity: 1 !important;
-}
-
-#maintenancePage .eyebrow,
-#maintenancePage h2,
-#maintenancePage p,
-#maintenancePage .maintenance-notice {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
 }
 
 #maintenancePage h2 {
@@ -1395,6 +1377,3 @@ input:focus-visible {
   padding: 14px;
   font-weight: 700;
 }
-/* =========================================================
-   END OF FINAL style.css
-   ========================================================= */
