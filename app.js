@@ -19,7 +19,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9
 
 
 /* =========================================================
-   GLOBAL VARIABLES
+   GLOBAL VARIABLESS
    ========================================================= */
 
 let scanner = null;
