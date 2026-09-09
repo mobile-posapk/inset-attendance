@@ -744,6 +744,10 @@ function clearRegistrationForm() {
    USER SELECTION
    ========================================================= */
 
+/* =========================================================
+   USER SELECTION
+   ========================================================= */
+
 function showUserSelection() {
 
   stopScanner();
@@ -779,6 +783,11 @@ function showUserSelection() {
     return;
   }
 
+
+  /* =======================================================
+     DISPLAY ALL REGISTERED ACCOUNTS
+     ======================================================= */
+
   users.forEach(function(user, index) {
 
     const wrapper =
@@ -789,10 +798,16 @@ function showUserSelection() {
     wrapper.style.marginBottom = "10px";
     wrapper.style.alignItems = "stretch";
 
+
+    /* =====================================================
+       SELECT USER BUTTON
+       ===================================================== */
+
     const selectButton =
       document.createElement("button");
 
     selectButton.type = "button";
+
     selectButton.className =
       "registered-user-option";
 
@@ -819,9 +834,24 @@ function showUserSelection() {
       </span>
     `;
 
+
+    /*
+     * IMPORTANT:
+     *
+     * Clicking the account must select that
+     * participant and continue to the QR scanner.
+     */
     selectButton.addEventListener(
       "click",
-      function() {
+      function(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        console.log(
+          "Selected account:",
+          user
+        );
 
         chooseRegisteredUser(index);
 
@@ -829,9 +859,9 @@ function showUserSelection() {
     );
 
 
-    // ==========================================
-    // REMOVE BUTTON
-    // ==========================================
+    /* =====================================================
+       REMOVE USER BUTTON
+       ===================================================== */
 
     const removeButton =
       document.createElement("button");
@@ -850,6 +880,7 @@ function showUserSelection() {
     removeButton.style.fontWeight = "700";
     removeButton.style.cursor = "pointer";
 
+
     removeButton.addEventListener(
       "click",
       function(event) {
@@ -857,8 +888,10 @@ function showUserSelection() {
         event.preventDefault();
         event.stopPropagation();
 
+
         const name =
           getParticipantFullName(user);
+
 
         const confirmed =
           window.confirm(
@@ -869,17 +902,25 @@ function showUserSelection() {
             "or attendance records from the school database."
           );
 
+
         if (!confirmed) {
           return;
         }
+
 
         removeRegisteredUser(
           user.licenseNo
         );
 
+
         currentParticipant = null;
+
         selectedUserIndex = null;
 
+
+        /*
+         * Rebuild the account list after removal.
+         */
         showUserSelection();
 
       }
@@ -894,94 +935,56 @@ function showUserSelection() {
       removeButton
     );
 
+
     list.appendChild(
       wrapper
     );
 
   });
 
-    // REMOVE ACCOUNT BUTTON
-    const removeButton =
-      document.createElement("button");
 
-    removeButton.type = "button";
-    removeButton.textContent = "REMOVE";
-
-    removeButton.style.width = "90px";
-    removeButton.style.minWidth = "90px";
-    removeButton.style.border = "none";
-    removeButton.style.borderRadius = "12px";
-    removeButton.style.background = "#dc3545";
-    removeButton.style.color = "#ffffff";
-    removeButton.style.fontWeight = "700";
-    removeButton.style.cursor = "pointer";
-
-    removeButton.addEventListener(
-      "click",
-      function(event) {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        const confirmed =
-          window.confirm(
-            "REMOVE THIS ACCOUNT FROM THIS DEVICE?\n\n" +
-            getParticipantFullName(user) +
-            "\n\n" +
-            "This will NOT delete the participant " +
-            "or attendance records from the school database."
-          );
-
-        if (!confirmed) {
-          return;
-        }
-
-        removeRegisteredUser(
-          user.licenseNo
-        );
-
-        currentParticipant = null;
-        selectedUserIndex = null;
-
-        showUserSelection();
-
-      }
-    );
-
-    wrapper.appendChild(selectButton);
-    wrapper.appendChild(removeButton);
-  // ==========================================
-  // REGISTER ANOTHER USER
-  // ==========================================
+  /* =======================================================
+     REGISTER ANOTHER USER
+     ======================================================= */
 
   const registerButton =
     document.createElement("button");
 
   registerButton.type = "button";
+
   registerButton.className =
     "secondary-button";
 
   registerButton.textContent =
     "➕ Register Another User";
 
+
   registerButton.addEventListener(
     "click",
-    function() {
+    function(event) {
+
+      event.preventDefault();
+
       openRegistration();
+
     }
   );
+
 
   list.appendChild(
     registerButton
   );
 
 
+  /* =======================================================
+     SHOW IDENTIFY PAGE
+     ======================================================= */
+
   showPage(
     "identifyPage"
   );
 
 }
-
 
 function chooseRegisteredUser(index) {
 
