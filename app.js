@@ -1,18 +1,16 @@
 /* =========================================================
    INSET 2026 ATTENDANCE SYSTEM
-   app.js
+   COMPLETE FRONTEND
    ========================================================= */
 
 
 /* =========================================================
-   CONFIGURATION
+   CONFIG
    ========================================================= */
 
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9emBZvJ_wsEi1CqABGV5-g0jIcZ0Ji7TqNOccygIlIflF3w/exec";
 
-const EVENT_START = "2026-09-09";
-const EVENT_END = "2026-09-11";
 
 const EVENT_DATES = [
   "2026-09-09",
@@ -20,19 +18,31 @@ const EVENT_DATES = [
   "2026-09-11"
 ];
 
+
+const EVENT_START =
+  "2026-09-09";
+
+
+const EVENT_END =
+  "2026-09-11";
+
+
 const LICENSE_STORAGE_KEY =
   "inset_license";
+
 
 const PENDING_QR_TOKEN_KEY =
   "inset_pending_qr_token";
 
 
 /* =========================================================
-   GLOBAL VARIABLES
+   GLOBALS
    ========================================================= */
 
 let scanner = null;
+
 let scannerRunning = false;
+
 let scannerProcessing = false;
 
 let currentParticipant = null;
@@ -44,17 +54,23 @@ let generatedQR = null;
    PAGE NAVIGATION
    ========================================================= */
 
-function showPage(pageId) {
+function showPage(
+  pageId
+) {
 
   document
-    .querySelectorAll(".page")
-    .forEach(page => {
+    .querySelectorAll(
+      ".page"
+    )
+    .forEach(
+      page => {
 
-      page.classList.remove(
-        "active"
-      );
+        page.classList.remove(
+          "active"
+        );
 
-    });
+      }
+    );
 
 
   const page =
@@ -87,9 +103,12 @@ function showHome() {
 
   stopScanner();
 
-  scannerProcessing = false;
+  scannerProcessing =
+    false;
 
-  showPage("homePage");
+  showPage(
+    "homePage"
+  );
 }
 
 
@@ -99,37 +118,41 @@ function showHome() {
 
 async function startAttendance() {
 
-  scannerProcessing = false;
+  scannerProcessing =
+    false;
+
 
   /*
-   * New scan session.
+   * New scanning session.
    */
   localStorage.removeItem(
     PENDING_QR_TOKEN_KEY
   );
 
 
-  const savedLicense =
+  const license =
     localStorage.getItem(
       LICENSE_STORAGE_KEY
     );
 
 
-  if (savedLicense) {
+  if (license) {
 
     currentParticipant = {
       licenseNo:
-        savedLicense
+        license
     };
 
   } else {
 
-    currentParticipant = null;
-
+    currentParticipant =
+      null;
   }
 
 
-  showPage("scannerPage");
+  showPage(
+    "scannerPage"
+  );
 
 
   const status =
@@ -143,7 +166,6 @@ async function startAttendance() {
     status.innerHTML =
       "📷 <strong>Ready to scan</strong><br>" +
       "Point your camera at the INSET 2026 QR code.";
-
   }
 
 
@@ -158,8 +180,7 @@ async function startAttendance() {
 function openRegistration() {
 
   /*
-   * Direct registration should not
-   * retain an abandoned QR.
+   * Direct registration.
    */
   localStorage.removeItem(
     PENDING_QR_TOKEN_KEY
@@ -189,7 +210,6 @@ function openRegistrationPage() {
 
     note.innerHTML =
       "Please enter your information to continue.";
-
   }
 
 
@@ -200,7 +220,7 @@ function openRegistrationPage() {
 
 
 /* =========================================================
-   COMPATIBILITY
+   OLD COMPATIBILITY
    ========================================================= */
 
 function identifyUser() {
@@ -210,39 +230,37 @@ function identifyUser() {
 
 
 /* =========================================================
-   REGISTER PARTICIPANT
+   REGISTER USER
    ========================================================= */
 
 async function registerUser() {
 
   const firstName =
-    document
-      .getElementById("firstName")
-      ?.value
-      .trim() || "";
+    document.getElementById(
+      "firstName"
+    )?.value
+    .trim() || "";
 
 
   const middleName =
-    document
-      .getElementById("middleName")
-      ?.value
-      .trim() || "";
+    document.getElementById(
+      "middleName"
+    )?.value
+    .trim() || "";
 
 
   const lastName =
-    document
-      .getElementById("lastName")
-      ?.value
-      .trim() || "";
+    document.getElementById(
+      "lastName"
+    )?.value
+    .trim() || "";
 
 
   const licenseNo =
-    document
-      .getElementById(
-        "registrationLicense"
-      )
-      ?.value
-      .trim() || "";
+    document.getElementById(
+      "registrationLicense"
+    )?.value
+    .trim() || "";
 
 
   if (!firstName) {
@@ -316,7 +334,7 @@ async function registerUser() {
 
 
     /*
-     * Save license locally.
+     * Save license.
      */
     localStorage.setItem(
       LICENSE_STORAGE_KEY,
@@ -341,8 +359,8 @@ async function registerUser() {
 
 
     /*
-     * Check if this registration
-     * came from a scanned QR.
+     * Was registration triggered
+     * by an earlier QR scan?
      */
     const pendingToken =
       localStorage.getItem(
@@ -352,6 +370,10 @@ async function registerUser() {
 
     if (pendingToken) {
 
+      /*
+       * Automatically process
+       * the original QR.
+       */
       await recordAttendanceWithToken(
         pendingToken,
         licenseNo
@@ -361,12 +383,20 @@ async function registerUser() {
     }
 
 
+    /*
+     * Normal registration.
+     */
     showLoading(false);
+
+
+    scannerProcessing =
+      false;
 
 
     showSuccess({
 
-      success: true,
+      success:
+        true,
 
       registrationOnly:
         true,
@@ -436,11 +466,17 @@ async function startScanner() {
 
 
   if (!reader) {
+
+    console.error(
+      "Reader element not found."
+    );
+
     return;
   }
 
 
-  reader.innerHTML = "";
+  reader.innerHTML =
+    "";
 
 
   const status =
@@ -491,6 +527,9 @@ async function startScanner() {
     }
 
 
+    /*
+     * Prefer rear camera.
+     */
     let cameraId =
       cameras[0].id;
 
@@ -517,14 +556,19 @@ async function startScanner() {
       cameraId,
 
       {
-        fps: 10,
+        fps:
+          10,
 
         qrbox: {
-          width: 250,
-          height: 250
+          width:
+            250,
+
+          height:
+            250
         },
 
-        aspectRatio: 1
+        aspectRatio:
+          1
       },
 
       decodedText => {
@@ -554,7 +598,11 @@ async function startScanner() {
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "Scanner error:",
+      error
+    );
+
 
     scannerRunning =
       false;
@@ -598,6 +646,7 @@ async function stopScanner() {
   scanner =
     null;
 
+
   scannerRunning =
     false;
 
@@ -609,6 +658,7 @@ async function stopScanner() {
   } catch (error) {
 
     console.warn(
+      "Scanner stop:",
       error
     );
   }
@@ -621,6 +671,7 @@ async function stopScanner() {
   } catch (error) {
 
     console.warn(
+      "Scanner clear:",
       error
     );
   }
@@ -665,6 +716,9 @@ async function processQRCode(
     }
 
 
+    /*
+     * Stop camera immediately.
+     */
     await stopScanner();
 
 
@@ -685,14 +739,16 @@ async function processQRCode(
       );
 
 
-      const input =
+      const licenseInput =
         document.getElementById(
           "registrationLicense"
         );
 
 
-      if (input) {
-        input.value = "";
+      if (licenseInput) {
+
+        licenseInput.value =
+          "";
       }
 
 
@@ -707,7 +763,7 @@ async function processQRCode(
 
 
     /*
-     * ALREADY REGISTERED
+     * REGISTERED
      */
     await recordAttendanceWithToken(
       token,
@@ -744,14 +800,20 @@ function extractQRToken(
 
 
   const text =
-    String(qrText)
-      .trim();
+    String(
+      qrText
+    ).trim();
 
 
+  /*
+   * QR is a URL.
+   */
   try {
 
     const url =
-      new URL(text);
+      new URL(
+        text
+      );
 
 
     const token =
@@ -767,6 +829,9 @@ function extractQRToken(
   } catch (error) {}
 
 
+  /*
+   * Raw token support.
+   */
   if (
     text &&
     !text.includes(" ") &&
@@ -811,7 +876,10 @@ async function recordAttendanceWithToken(
       );
 
 
-    const registrationRequired =
+    /*
+     * Participant not found.
+     */
+    const needsRegistration =
       result &&
       (
         result.registrationRequired ===
@@ -825,10 +893,7 @@ async function recordAttendanceWithToken(
       );
 
 
-    /*
-     * Participant no longer exists.
-     */
-    if (registrationRequired) {
+    if (needsRegistration) {
 
       showLoading(false);
 
@@ -843,7 +908,7 @@ async function recordAttendanceWithToken(
 
 
       /*
-       * Preserve the QR.
+       * Keep the scanned QR.
        */
       localStorage.setItem(
         PENDING_QR_TOKEN_KEY,
@@ -851,14 +916,16 @@ async function recordAttendanceWithToken(
       );
 
 
-      const input =
+      const licenseInput =
         document.getElementById(
           "registrationLicense"
         );
 
 
-      if (input) {
-        input.value = "";
+      if (licenseInput) {
+
+        licenseInput.value =
+          "";
       }
 
 
@@ -884,6 +951,7 @@ async function recordAttendanceWithToken(
 
       showLoading(false);
 
+
       scannerProcessing =
         false;
 
@@ -898,7 +966,7 @@ async function recordAttendanceWithToken(
 
 
     /*
-     * Invalid/expired/wrong QR.
+     * Invalid / expired / duplicate.
      */
     localStorage.removeItem(
       PENDING_QR_TOKEN_KEY
@@ -906,6 +974,7 @@ async function recordAttendanceWithToken(
 
 
     showLoading(false);
+
 
     scannerProcessing =
       false;
@@ -929,29 +998,29 @@ async function recordAttendanceWithToken(
 
     showError(
       error.message ||
-      "Unable to connect to the attendance server."
+      "Unable to connect to attendance server."
     );
   }
 }
 
 
 /* =========================================================
-   SUCCESS
+   SUCCESS PAGE
    ========================================================= */
 
 function showSuccess(
   result
 ) {
 
-  const details =
-    document.getElementById(
-      "successDetails"
-    );
-
-
   const message =
     document.getElementById(
       "successMessage"
+    );
+
+
+  const details =
+    document.getElementById(
+      "successDetails"
     );
 
 
@@ -967,7 +1036,8 @@ function showSuccess(
 
   if (details) {
 
-    let html = "";
+    let html =
+      "";
 
 
     if (result.mode) {
@@ -999,11 +1069,28 @@ function showSuccess(
       html +=
         "Time: " +
         escapeHTML(
-          formatDisplayTime(
-            result.time
-          )
+          result.time
         ) +
         "<br>";
+    }
+
+
+    if (
+      result.firstName ||
+      result.lastName
+    ) {
+
+      html +=
+        "Participant: " +
+        escapeHTML(
+          [
+            result.firstName,
+            result.middleName,
+            result.lastName
+          ]
+          .filter(Boolean)
+          .join(" ")
+        );
     }
 
 
@@ -1019,22 +1106,22 @@ function showSuccess(
 
 
 /* =========================================================
-   ERROR
+   ERROR PAGE
    ========================================================= */
 
 function showError(
   message
 ) {
 
-  const errorMessage =
+  const element =
     document.getElementById(
       "errorMessage"
     );
 
 
-  if (errorMessage) {
+  if (element) {
 
-    errorMessage.innerHTML =
+    element.innerHTML =
       escapeHTML(
         message
       );
@@ -1048,7 +1135,7 @@ function showError(
 
 
 /* =========================================================
-   API
+   API CALL
    ========================================================= */
 
 async function apiCall(
@@ -1074,8 +1161,11 @@ async function apiCall(
     await fetch(
       url,
       {
-        method: "GET",
-        cache: "no-store"
+        method:
+          "GET",
+
+        cache:
+          "no-store"
       }
     );
 
@@ -1093,25 +1183,24 @@ async function apiCall(
     await response.text();
 
 
-  let result;
-
-
   try {
 
-    result =
-      JSON.parse(
-        text
-      );
+    return JSON.parse(
+      text
+    );
 
   } catch (error) {
+
+    console.error(
+      "Server response:",
+      text
+    );
+
 
     throw new Error(
       "Invalid response from attendance server."
     );
   }
-
-
-  return result;
 }
 
 
@@ -1125,10 +1214,12 @@ function openAdminLogin() {
     "adminLoginPage"
   );
 
+
   setAdminDefaults();
 }
 
 
+/* Compatibility */
 function showAdminLogin() {
 
   openAdminLogin();
@@ -1136,7 +1227,7 @@ function showAdminLogin() {
 
 
 /* =========================================================
-   ADMIN LOGIN
+   ADMIN PASSWORD
    ========================================================= */
 
 async function checkAdminPassword() {
@@ -1159,7 +1250,7 @@ async function checkAdminPassword() {
   if (!password) {
 
     showAdminMessage(
-      "Please enter the admin password."
+      "Please enter the administrator password."
     );
 
     return;
@@ -1168,20 +1259,26 @@ async function checkAdminPassword() {
 
   showLoading(
     true,
-    "Checking admin access..."
+    "Checking administrator access..."
   );
 
 
   try {
 
+    /*
+     * IMPORTANT:
+     *
+     * This EXACT action exists
+     * in Code.gs.
+     */
     const result =
-  await apiCall(
-    "checkAdminPassword",
-    {
-      password:
-        password
-    }
-  );
+      await apiCall(
+        "checkAdminPassword",
+        {
+          password:
+            password
+        }
+      );
 
 
     showLoading(false);
@@ -1191,13 +1288,16 @@ async function checkAdminPassword() {
 
       showAdminMessage(
         result.message ||
-        "Invalid admin password."
+        "Incorrect administrator password."
       );
 
       return;
     }
 
 
+    /*
+     * SUCCESS
+     */
     showPage(
       "adminPage"
     );
@@ -1209,33 +1309,35 @@ async function checkAdminPassword() {
 
     loadAttendanceSummary();
 
-
-    /*
-     * Add A4 PDF button.
-     */
     addPDFButton();
+
 
   } catch (error) {
 
+    console.error(
+      "ADMIN LOGIN ERROR:",
+      error
+    );
+
+
     showLoading(false);
+
 
     showAdminMessage(
       error.message ||
-      "Unable to connect to server."
+      "Unable to connect to the attendance server."
     );
   }
 }
 
 
-/* =========================================================
-   ADMIN COMPATIBILITY
-   ========================================================= */
-
+/* Compatibility */
 async function adminLogin(
   event
 ) {
 
   if (event) {
+
     event.preventDefault();
   }
 
@@ -1287,6 +1389,10 @@ function showAdminMessage(
       "center";
 
 
+    element.style.color =
+      "#b42318";
+
+
     input.parentElement
       .appendChild(
         element
@@ -1332,7 +1438,7 @@ function setAdminDefaults() {
 
 
 /* =========================================================
-   SELECT DAY
+   SELECT QR DATE
    ========================================================= */
 
 function selectQRDay(
@@ -1379,7 +1485,9 @@ function selectQRDay(
 
 
   if (container) {
-    container.innerHTML = "";
+
+    container.innerHTML =
+      "";
   }
 
 
@@ -1422,7 +1530,7 @@ async function generateQR(
   ) {
 
     showQRStatus(
-      "Please select a valid date."
+      "Please select a valid INSET 2026 date."
     );
 
     return;
@@ -1456,6 +1564,7 @@ async function generateQR(
       await apiCall(
         "generateQR",
         {
+
           mode:
             mode,
 
@@ -1491,16 +1600,17 @@ async function generateQR(
 
     showLoading(false);
 
+
     showQRStatus(
       error.message ||
-      "Unable to generate QR."
+      "Unable to generate QR code."
     );
   }
 }
 
 
 /* =========================================================
-   LOAD QR LIBRARY
+   LOAD QR GENERATOR
    ========================================================= */
 
 function ensureQRCodeLibrary() {
@@ -1519,6 +1629,35 @@ function ensureQRCodeLibrary() {
       }
 
 
+      const existing =
+        document.querySelector(
+          'script[data-inset-qrcode="true"]'
+        );
+
+
+      if (existing) {
+
+        existing.addEventListener(
+          "load",
+          resolve
+        );
+
+
+        existing.addEventListener(
+          "error",
+          () =>
+            reject(
+              new Error(
+                "QR generator failed to load."
+              )
+            )
+        );
+
+
+        return;
+      }
+
+
       const script =
         document.createElement(
           "script"
@@ -1529,16 +1668,21 @@ function ensureQRCodeLibrary() {
         "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
 
 
+      script.dataset.insetQrcode =
+        "true";
+
+
       script.onload =
         resolve;
 
 
       script.onerror =
-        () => reject(
-          new Error(
-            "QR generator library failed to load."
-          )
-        );
+        () =>
+          reject(
+            new Error(
+              "Unable to load QR generator."
+            )
+          );
 
 
       document.head.appendChild(
@@ -1605,7 +1749,9 @@ async function displayQRCode(
   );
 
 
-  await wait(250);
+  await wait(
+    300
+  );
 
 
   const day =
@@ -1637,19 +1783,16 @@ async function displayQRCode(
   };
 
 
-  const downloadButton =
+  const button =
     document.getElementById(
       "downloadQrButton"
     );
 
 
-  if (downloadButton) {
+  if (button) {
 
-    downloadButton.disabled =
+    button.disabled =
       false;
-
-    downloadButton.textContent =
-      "⬇️ DOWNLOAD QR CODE";
   }
 
 
@@ -1658,7 +1801,9 @@ async function displayQRCode(
     "<strong>DAY " +
     day +
     " — " +
-    result.mode +
+    escapeHTML(
+      result.mode
+    ) +
     "</strong><br>" +
 
     escapeHTML(
@@ -1769,13 +1914,12 @@ async function downloadGeneratedQR() {
 
   link.click();
 
-
   link.remove();
 }
 
 
 /* =========================================================
-   ADD A4 PDF BUTTON
+   ADD PDF BUTTON
    ========================================================= */
 
 function addPDFButton() {
@@ -1790,13 +1934,13 @@ function addPDFButton() {
   }
 
 
-  const downloadQRButton =
+  const qrButton =
     document.getElementById(
       "downloadQrButton"
     );
 
 
-  if (!downloadQRButton) {
+  if (!qrButton) {
     return;
   }
 
@@ -1819,20 +1963,19 @@ function addPDFButton() {
     "main-button primary-button qr-download-button";
 
 
-  button.style.marginTop =
-    "10px";
-
-
   button.innerHTML =
     "📄 DOWNLOAD ALL 6 QR CODES — A4 PDF";
+
+
+  button.style.marginTop =
+    "10px";
 
 
   button.onclick =
     generateA4PDF;
 
 
-  downloadQRButton
-    .parentElement
+  qrButton.parentElement
     .appendChild(
       button
     );
@@ -1859,43 +2002,10 @@ function ensureJsPDF() {
       }
 
 
-      const existing =
-        document.querySelector(
-          'script[data-inset-jspdf="true"]'
-        );
-
-
-      if (existing) {
-
-        existing.addEventListener(
-          "load",
-          resolve
-        );
-
-
-        existing.addEventListener(
-          "error",
-          () =>
-            reject(
-              new Error(
-                "PDF library failed to load."
-              )
-            )
-        );
-
-
-        return;
-      }
-
-
       const script =
         document.createElement(
           "script"
         );
-
-
-      script.dataset.insetJspdf =
-        "true";
 
 
       script.src =
@@ -1924,7 +2034,7 @@ function ensureJsPDF() {
 
 
 /* =========================================================
-   GENERATE ALL 6 QR CODES + A4 PDF
+   GENERATE ALL 6 QR CODES
    ========================================================= */
 
 async function generateA4PDF() {
@@ -1942,22 +2052,30 @@ async function generateA4PDF() {
     await ensureJsPDF();
 
 
-    const qrItems = [];
+    const items =
+      [];
 
 
     /*
-     * Generate all six real QR sessions.
+     * DAY 1
+     * DAY 2
+     * DAY 3
+     *
+     * TIME-IN
+     * TIME-OUT
      */
     for (
-      let dayIndex = 0;
-      dayIndex < EVENT_DATES.length;
-      dayIndex++
+      let i = 0;
+      i < EVENT_DATES.length;
+      i++
     ) {
 
       const date =
-        EVENT_DATES[
-          dayIndex
-        ];
+        EVENT_DATES[i];
+
+
+      const day =
+        i + 1;
 
 
       for (
@@ -1968,11 +2086,9 @@ async function generateA4PDF() {
       ) {
 
         showLoading(
-
           true,
-
           "Generating DAY " +
-          (dayIndex + 1) +
+          day +
           " " +
           mode +
           "..."
@@ -1998,23 +2114,22 @@ async function generateA4PDF() {
 
           throw new Error(
             result.message ||
-            "Failed to generate " +
+            "Unable to generate " +
             mode
           );
         }
 
 
-        const qrDataURL =
-          await createQRDataURL(
-            result.qrUrl ||
-            result.url
+        const qrImage =
+          await createQRImage(
+            result.qrUrl
           );
 
 
-        qrItems.push({
+        items.push({
 
           day:
-            dayIndex + 1,
+            day,
 
           mode:
             mode,
@@ -2022,11 +2137,8 @@ async function generateA4PDF() {
           date:
             date,
 
-          qrDataURL:
-            qrDataURL,
-
-          token:
-            result.token
+          qrImage:
+            qrImage
 
         });
       }
@@ -2040,7 +2152,7 @@ async function generateA4PDF() {
 
 
     await createA4PDF(
-      qrItems
+      items
     );
 
 
@@ -2048,13 +2160,16 @@ async function generateA4PDF() {
 
 
     showQRStatus(
-      "✅ All 6 QR codes were generated and the A4 PDF is ready."
+      "✅ The 6 QR codes were generated and the A4 PDF was downloaded."
     );
 
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      error
+    );
+
 
     showLoading(false);
 
@@ -2071,50 +2186,50 @@ async function generateA4PDF() {
 
 
 /* =========================================================
-   CREATE QR DATA URL
+   CREATE QR IMAGE
    ========================================================= */
 
-async function createQRDataURL(
+async function createQRImage(
   text
 ) {
 
-  const temporary =
+  const holder =
     document.createElement(
       "div"
     );
 
 
-  temporary.style.position =
+  holder.style.position =
     "fixed";
 
 
-  temporary.style.left =
+  holder.style.left =
     "-10000px";
 
 
-  temporary.style.top =
+  holder.style.top =
     "-10000px";
 
 
-  temporary.style.width =
-    "500px";
+  holder.style.width =
+    "800px";
 
 
-  temporary.style.height =
-    "500px";
+  holder.style.height =
+    "800px";
 
 
-  temporary.style.background =
+  holder.style.background =
     "#ffffff";
 
 
   document.body.appendChild(
-    temporary
+    holder
   );
 
 
   new QRCode(
-    temporary,
+    holder,
     {
 
       text:
@@ -2138,11 +2253,13 @@ async function createQRDataURL(
   );
 
 
-  await wait(300);
+  await wait(
+    400
+  );
 
 
   const canvas =
-    temporary.querySelector(
+    holder.querySelector(
       "canvas"
     );
 
@@ -2161,7 +2278,7 @@ async function createQRDataURL(
   } else {
 
     const image =
-      temporary.querySelector(
+      holder.querySelector(
         "img"
       );
 
@@ -2174,7 +2291,7 @@ async function createQRDataURL(
   }
 
 
-  temporary.remove();
+  holder.remove();
 
 
   if (!dataURL) {
@@ -2194,7 +2311,7 @@ async function createQRDataURL(
    ========================================================= */
 
 async function createA4PDF(
-  qrItems
+  items
 ) {
 
   const {
@@ -2203,11 +2320,6 @@ async function createA4PDF(
     window.jspdf;
 
 
-  /*
-   * A4 portrait.
-   *
-   * Units: millimeters
-   */
   const pdf =
     new jsPDF({
 
@@ -2225,33 +2337,17 @@ async function createA4PDF(
     });
 
 
-  const pageWidth =
+  const W =
     210;
 
 
-  const pageHeight =
+  const H =
     297;
-
-
-  const margin =
-    12;
-
-
-  const navy =
-    "#073B70";
-
-
-  const gold =
-    "#E6AA18";
-
-
-  const lightBlue =
-    "#EEF5FA";
 
 
   for (
     let i = 0;
-    i < qrItems.length;
+    i < items.length;
     i++
   ) {
 
@@ -2265,7 +2361,7 @@ async function createA4PDF(
 
 
     const item =
-      qrItems[i];
+      items[i];
 
 
     const day =
@@ -2281,7 +2377,7 @@ async function createA4PDF(
 
 
     /*
-     * Background
+     * WHITE BACKGROUND
      */
     pdf.setFillColor(
       255,
@@ -2293,14 +2389,14 @@ async function createA4PDF(
     pdf.rect(
       0,
       0,
-      pageWidth,
-      pageHeight,
+      W,
+      H,
       "F"
     );
 
 
     /*
-     * Outer border
+     * OUTER BORDER
      */
     pdf.setDrawColor(
       7,
@@ -2323,7 +2419,7 @@ async function createA4PDF(
 
 
     /*
-     * Top accent
+     * TOP NAVY STRIPE
      */
     pdf.setFillColor(
       7,
@@ -2336,11 +2432,14 @@ async function createA4PDF(
       7,
       7,
       196,
-      10,
+      9,
       "F"
     );
 
 
+    /*
+     * GOLD STRIPE
+     */
     pdf.setFillColor(
       230,
       170,
@@ -2350,7 +2449,7 @@ async function createA4PDF(
 
     pdf.rect(
       7,
-      17,
+      16,
       196,
       2.5,
       "F"
@@ -2358,7 +2457,7 @@ async function createA4PDF(
 
 
     /*
-     * Header
+     * INSET 2026
      */
     pdf.setTextColor(
       7,
@@ -2374,59 +2473,14 @@ async function createA4PDF(
 
 
     pdf.setFontSize(
-      28
+      30
     );
 
 
     pdf.text(
       "INSET 2026",
-      pageWidth / 2,
-      36,
-      {
-        align:
-          "center"
-      }
-    );
-
-
-    pdf.setFontSize(
-      11
-    );
-
-
-    pdf.setFont(
-      "helvetica",
-      "normal"
-    );
-
-
-    pdf.setTextColor(
-      70,
-      70,
-      70
-    );
-
-
-    pdf.text(
-      "IN-SERVICE TRAINING",
-      pageWidth / 2,
-      44,
-      {
-        align:
-          "center"
-      }
-    );
-
-
-    pdf.setFontSize(
-      10
-    );
-
-
-    pdf.text(
-      "September 9–11, 2026",
-      pageWidth / 2,
-      50,
+      W / 2,
+      38,
       {
         align:
           "center"
@@ -2435,7 +2489,32 @@ async function createA4PDF(
 
 
     /*
-     * Main title panel
+     * SUBTITLE
+     */
+    pdf.setFont(
+      "helvetica",
+      "normal"
+    );
+
+
+    pdf.setFontSize(
+      11
+    );
+
+
+    pdf.text(
+      "IN-SERVICE TRAINING",
+      W / 2,
+      46,
+      {
+        align:
+          "center"
+      }
+    );
+
+
+    /*
+     * MAIN DAY PANEL
      */
     pdf.setFillColor(
       7,
@@ -2446,9 +2525,9 @@ async function createA4PDF(
 
     pdf.roundedRect(
       20,
-      59,
+      58,
       170,
-      40,
+      42,
       5,
       5,
       "F"
@@ -2456,28 +2535,7 @@ async function createA4PDF(
 
 
     /*
-     * Gold lower accent
-     */
-    pdf.setFillColor(
-      230,
-      170,
-      24
-    );
-
-
-    pdf.roundedRect(
-      20,
-      91,
-      170,
-      8,
-      0,
-      0,
-      "F"
-    );
-
-
-    /*
-     * DAY X
+     * DAY
      */
     pdf.setTextColor(
       255,
@@ -2501,8 +2559,8 @@ async function createA4PDF(
       "DAY " +
       day +
       ":",
-      28,
-      82
+      30,
+      84
     );
 
 
@@ -2510,9 +2568,9 @@ async function createA4PDF(
      * TIME IN / TIME OUT
      */
     pdf.setTextColor(
-      255,
-      255,
-      255
+      230,
+      180,
+      35
     );
 
 
@@ -2524,12 +2582,12 @@ async function createA4PDF(
     pdf.text(
       mode,
       72,
-      82
+      84
     );
 
 
     /*
-     * Date
+     * DATE
      */
     pdf.setTextColor(
       7,
@@ -2539,7 +2597,7 @@ async function createA4PDF(
 
 
     pdf.setFontSize(
-      17
+      18
     );
 
 
@@ -2547,8 +2605,8 @@ async function createA4PDF(
       formatDisplayDate(
         date
       ).toUpperCase(),
-      pageWidth / 2,
-      110,
+      W / 2,
+      112,
       {
         align:
           "center"
@@ -2557,16 +2615,10 @@ async function createA4PDF(
 
 
     /*
-     * Instruction
+     * SCAN INSTRUCTION
      */
     pdf.setFontSize(
       12
-    );
-
-
-    pdf.setFont(
-      "helvetica",
-      "bold"
     );
 
 
@@ -2581,8 +2633,8 @@ async function createA4PDF(
       mode === "TIME-IN"
         ? "SCAN HERE FOR TIME IN"
         : "SCAN HERE FOR TIME OUT",
-      pageWidth / 2,
-      119,
+      W / 2,
+      122,
       {
         align:
           "center"
@@ -2591,16 +2643,14 @@ async function createA4PDF(
 
 
     /*
-     * QR area
+     * QR SIZE
      */
     const qrSize =
-      125;
+      135;
 
 
     const qrX =
-      (pageWidth -
-        qrSize) /
-      2;
+      (W - qrSize) / 2;
 
 
     const qrY =
@@ -2608,7 +2658,7 @@ async function createA4PDF(
 
 
     /*
-     * QR white card
+     * QR WHITE CARD
      */
     pdf.setFillColor(
       255,
@@ -2625,7 +2675,7 @@ async function createA4PDF(
 
 
     pdf.setLineWidth(
-      1.2
+      1.3
     );
 
 
@@ -2641,10 +2691,10 @@ async function createA4PDF(
 
 
     /*
-     * Real QR code
+     * REAL QR IMAGE
      */
     pdf.addImage(
-      item.qrDataURL,
+      item.qrImage,
       "PNG",
       qrX,
       qrY,
@@ -2656,7 +2706,7 @@ async function createA4PDF(
 
 
     /*
-     * Bottom instruction panel
+     * BOTTOM CALL TO ACTION
      */
     pdf.setFillColor(
       7,
@@ -2667,11 +2717,11 @@ async function createA4PDF(
 
     pdf.roundedRect(
       25,
-      263,
+      273,
       160,
-      13,
-      6,
-      6,
+      11,
+      5,
+      5,
       "F"
     );
 
@@ -2684,7 +2734,7 @@ async function createA4PDF(
 
 
     pdf.setFontSize(
-      11
+      10
     );
 
 
@@ -2692,84 +2742,18 @@ async function createA4PDF(
       mode === "TIME-IN"
         ? "SCAN THIS QR CODE FOR TIME IN"
         : "SCAN THIS QR CODE FOR TIME OUT",
-      pageWidth / 2,
-      271.5,
+      W / 2,
+      280,
       {
         align:
           "center"
-      }
-    );
-
-
-    /*
-     * Footer
-     */
-    pdf.setTextColor(
-      90,
-      90,
-      90
-    );
-
-
-    pdf.setFont(
-      "helvetica",
-      "italic"
-    );
-
-
-    pdf.setFontSize(
-      9
-    );
-
-
-    pdf.text(
-      "Please scan only the QR code matching the day and activity.",
-      pageWidth / 2,
-      282,
-      {
-        align:
-          "center"
-      }
-    );
-
-
-    /*
-     * Small page number
-     */
-    pdf.setFont(
-      "helvetica",
-      "normal"
-    );
-
-
-    pdf.setFontSize(
-      7
-    );
-
-
-    pdf.setTextColor(
-      130,
-      130,
-      130
-    );
-
-
-    pdf.text(
-      "Page " +
-      (i + 1) +
-      " of 6",
-      pageWidth - 12,
-      290,
-      {
-        align:
-          "right"
       }
     );
   }
 
 
   /*
-   * Download.
+   * DOWNLOAD PDF
    */
   pdf.save(
     "INSET2026_ATTENDANCE_QR_CODES_A4.pdf"
@@ -2783,24 +2767,24 @@ async function createA4PDF(
 
 async function loadAttendanceSummary() {
 
-  const summary =
+  const container =
     document.getElementById(
       "attendanceSummary"
     );
 
 
-  if (!summary) {
+  if (!container) {
     return;
   }
 
 
-  summary.innerHTML =
+  container.innerHTML =
     "Loading attendance summary...";
 
 
   try {
 
-    const selectedDate =
+    const date =
       document.getElementById(
         "attendanceDate"
       )?.value ||
@@ -2812,17 +2796,16 @@ async function loadAttendanceSummary() {
         "getAttendanceSummary",
         {
           selectedDate:
-            selectedDate
+            date
         }
       );
 
 
     if (!result.success) {
 
-      summary.innerHTML =
+      container.innerHTML =
         escapeHTML(
-          result.message ||
-          "Unable to load summary."
+          result.message
         );
 
       return;
@@ -2831,13 +2814,13 @@ async function loadAttendanceSummary() {
 
     renderAttendanceSummary(
       result,
-      summary
+      container
     );
 
 
   } catch (error) {
 
-    summary.innerHTML =
+    container.innerHTML =
       escapeHTML(
         error.message ||
         "Unable to load summary."
@@ -2856,106 +2839,113 @@ function renderAttendanceSummary(
 ) {
 
   if (
-    Array.isArray(
+    !Array.isArray(
       result.summary
     )
   ) {
 
-    if (
-      result.summary.length ===
-      0
-    ) {
-
-      container.innerHTML =
-        "<p>No attendance records yet.</p>";
-
-      return;
-    }
-
-
-    let html =
-      "<div class='summary-table-wrapper'>" +
-      "<table>" +
-      "<thead>" +
-      "<tr>" +
-      "<th>NAME</th>" +
-      "<th>LICENSE</th>" +
-      "<th>TIME IN</th>" +
-      "<th>TIME OUT</th>" +
-      "</tr>" +
-      "</thead>" +
-      "<tbody>";
-
-
-    result.summary.forEach(
-      row => {
-
-        const name =
-          [
-            row.firstName,
-            row.middleName,
-            row.lastName
-          ]
-          .filter(Boolean)
-          .join(" ");
-
-
-        html +=
-          "<tr>" +
-
-          "<td>" +
-          escapeHTML(
-            name
-          ) +
-          "</td>" +
-
-          "<td>" +
-          escapeHTML(
-            row.licenseNo ||
-            row.license ||
-            ""
-          ) +
-          "</td>" +
-
-          "<td>" +
-          escapeHTML(
-            row.timeIn ||
-            ""
-          ) +
-          "</td>" +
-
-          "<td>" +
-          escapeHTML(
-            row.timeOut ||
-            ""
-          ) +
-          "</td>" +
-
-          "</tr>";
-      }
-    );
-
-
-    html +=
-      "</tbody></table></div>";
-
-
     container.innerHTML =
-      html;
-
+      "<strong>Total:</strong> " +
+      escapeHTML(
+        String(
+          result.total || 0
+        )
+      );
 
     return;
   }
 
 
+  if (
+    result.summary.length === 0
+  ) {
+
+    container.innerHTML =
+      "<p>No attendance records yet.</p>";
+
+    return;
+  }
+
+
+  let html =
+    "<div class='summary-table-wrapper'>" +
+
+    "<table>" +
+
+    "<thead>" +
+
+    "<tr>" +
+
+    "<th>NAME</th>" +
+
+    "<th>LICENSE</th>" +
+
+    "<th>TIME IN</th>" +
+
+    "<th>TIME OUT</th>" +
+
+    "</tr>" +
+
+    "</thead>" +
+
+    "<tbody>";
+
+
+  result.summary.forEach(
+    row => {
+
+      const name =
+        [
+          row.firstName,
+          row.middleName,
+          row.lastName
+        ]
+        .filter(Boolean)
+        .join(" ");
+
+
+      html +=
+
+        "<tr>" +
+
+        "<td>" +
+        escapeHTML(
+          name
+        ) +
+        "</td>" +
+
+        "<td>" +
+        escapeHTML(
+          row.licenseNo ||
+          ""
+        ) +
+        "</td>" +
+
+        "<td>" +
+        escapeHTML(
+          row.timeIn ||
+          ""
+        ) +
+        "</td>" +
+
+        "<td>" +
+        escapeHTML(
+          row.timeOut ||
+          ""
+        ) +
+        "</td>" +
+
+        "</tr>";
+    }
+  );
+
+
+  html +=
+    "</tbody></table></div>";
+
+
   container.innerHTML =
-    "<strong>Total:</strong> " +
-    escapeHTML(
-      String(
-        result.total ||
-        0
-      )
-    );
+    html;
 }
 
 
@@ -3025,7 +3015,7 @@ function showQRStatus(
 
 
 /* =========================================================
-   QR STATUS UPDATE
+   UPDATE QR STATUS
    ========================================================= */
 
 function updateQRStatus() {
@@ -3105,17 +3095,17 @@ function getInsetDayNumber(
    ========================================================= */
 
 function formatDisplayDate(
-  dateString
+  value
 ) {
 
-  if (!dateString) {
+  if (!value) {
     return "";
   }
 
 
   const parts =
     String(
-      dateString
+      value
     ).split("-");
 
 
@@ -3148,75 +3138,6 @@ function formatDisplayDate(
 
 
   return String(
-    dateString
-  );
-}
-
-
-/* =========================================================
-   TIME FORMAT
-   ========================================================= */
-
-function formatDisplayTime(
-  value
-) {
-
-  if (!value) {
-    return "";
-  }
-
-
-  if (
-    typeof value ===
-      "string" &&
-    /AM|PM/i.test(
-      value
-    )
-  ) {
-
-    return value;
-  }
-
-
-  try {
-
-    const date =
-      new Date(
-        value
-      );
-
-
-    if (
-      !isNaN(
-        date.getTime()
-      )
-    ) {
-
-      return date.toLocaleTimeString(
-        "en-PH",
-        {
-          hour:
-            "numeric",
-
-          minute:
-            "2-digit",
-
-          second:
-            "2-digit",
-
-          hour12:
-            true,
-
-          timeZone:
-            "Asia/Manila"
-        }
-      );
-    }
-
-  } catch (error) {}
-
-
-  return String(
     value
   );
 }
@@ -3228,7 +3149,7 @@ function formatDisplayTime(
 
 function showLoading(
   show,
-  message = "Please wait..."
+  message
 ) {
 
   const overlay =
@@ -3258,9 +3179,9 @@ function showLoading(
     if (text) {
 
       text.textContent =
-        message;
+        message ||
+        "Please wait...";
     }
-
 
   } else {
 
@@ -3288,7 +3209,9 @@ function escapeHTML(
   }
 
 
-  return String(value)
+  return String(
+    value
+  )
 
     .replace(
       /&/g,
@@ -3336,7 +3259,7 @@ function wait(
 
 
 /* =========================================================
-   INITIALIZATION
+   INITIALIZE
    ========================================================= */
 
 document.addEventListener(
@@ -3348,6 +3271,9 @@ document.addEventListener(
     );
 
 
+    /*
+     * Make sure HOME is active.
+     */
     const pages =
       document.querySelectorAll(
         ".page"
