@@ -1343,22 +1343,57 @@ input:focus-visible {
 
 #maintenancePage {
   width: 100%;
-  min-height: 100vh;
+}
 
-  align-items: center;
-  justify-content: center;
+#maintenancePage.active {
+  display: block !important;
+}
 
+#maintenancePage .result-card {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   text-align: center;
 }
 
-
-/*
- * When maintenance mode is active,
- * JavaScript shows this page.
- */
-
-#maintenancePage.active {
+#maintenancePage .result-icon {
   display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#maintenancePage .eyebrow,
+#maintenancePage h2,
+#maintenancePage p,
+#maintenancePage .maintenance-notice {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+#maintenancePage h2 {
+  margin: 10px 0 15px;
+  color: #0b3768;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+#maintenancePage .error-message {
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+#maintenancePage .maintenance-notice {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  border-radius: 12px;
+  padding: 14px;
+  font-weight: 700;
 }
 /* =========================================================
    END OF FINAL style.css
