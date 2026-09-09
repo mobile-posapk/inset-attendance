@@ -1352,7 +1352,7 @@ function displayQRCode(
 
         "<span id=\"qrCountdown\">" +
 
-        "10:00" +
+        "1:00:00" +
 
         "</span>";
 
