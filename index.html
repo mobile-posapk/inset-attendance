@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8">
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    content="width=device-width, initial-scale=1.0"
   >
 
   <meta
     name="theme-color"
-    content="#0b2a5b"
+    content="#0b2d52"
+  >
+
+  <meta
+    name="description"
+    content="INSET 2026 Attendance System"
   >
 
   <title>INSET 2026 Attendance System</title>
@@ -22,1070 +25,1141 @@
     href="style.css"
   >
 
-  <!-- QR SCANNER LIBRARY -->
+  <!-- QR SCANNER -->
   <script
     src="https://unpkg.com/html5-qrcode"
-    defer>
-  </script>
-
-
-  <style>
-
-    /* =====================================================
-       REGISTERED USER SELECTION
-       ===================================================== */
-
-    .registered-user-option {
-
-      width: 100%;
-
-      display: flex;
-
-      align-items: center;
-
-      gap: 12px;
-
-      margin: 10px 0;
-
-      padding: 15px;
-
-      border: 2px solid #e0e7ef;
-
-      border-radius: 14px;
-
-      background: #ffffff;
-
-      text-align: left;
-
-      cursor: pointer;
-
-      transition: 0.2s ease;
-
-      box-sizing: border-box;
-    }
-
-
-    .registered-user-option:hover {
-
-      border-color: #0b5cab;
-
-      background: #f8fbff;
-    }
-
-
-    .registered-user-option.selected {
-
-      border-color: #0b5cab;
-
-      background: #f0f7ff;
-    }
-
-
-    .user-radio {
-
-      font-size: 22px;
-
-      width: 24px;
-
-      flex: 0 0 24px;
-
-      text-align: center;
-    }
-
-
-    .registered-user-info {
-
-      display: flex;
-
-      flex-direction: column;
-
-      gap: 4px;
-
-      min-width: 0;
-    }
-
-
-    .registered-user-name {
-
-      font-size: 16px;
-
-      font-weight: 700;
-    }
-
-
-    .registered-user-license {
-
-      color: #667085;
-
-      font-size: 13px;
-    }
-
-
-    .selected-user-details {
-
-      margin: 18px 0;
-
-      text-align: center;
-    }
-
-
-    .selected-user-name {
-
-      font-size: 22px;
-
-      font-weight: 800;
-
-      margin-bottom: 6px;
-    }
-
-
-    .selected-user-license {
-
-      color: #667085;
-    }
-
-
-    .confirmation-note {
-
-      color: #667085;
-
-      text-align: center;
-
-      line-height: 1.5;
-    }
-
-
-    .active-attendance-user {
-
-      margin-bottom: 15px;
-
-      padding: 12px;
-
-      border-radius: 12px;
-
-      background: #f4f7fb;
-
-      text-align: center;
-
-      line-height: 1.5;
-    }
-
-
-    /* =====================================================
-       USER SELECTION TITLE
-       ===================================================== */
-
-    .user-selection-title {
-
-      text-align: center;
-
-      margin-bottom: 8px;
-    }
-
-
-    .user-selection-description {
-
-      text-align: center;
-
-      color: #667085;
-
-      line-height: 1.5;
-
-      margin-bottom: 18px;
-    }
-
-
-    /* =====================================================
-       MOBILE
-       ===================================================== */
-
-    @media (max-width: 600px) {
-
-      .registered-user-option {
-
-        padding: 14px;
-
-      }
-
-      .registered-user-name {
-
-        font-size: 15px;
-
-      }
-
-      .selected-user-name {
-
-        font-size: 20px;
-
-      }
-
-    }
-
-  </style>
-
+    defer
+  ></script>
+
+  <!-- MAIN JAVASCRIPT -->
+  <script
+    src="app.js"
+    defer
+  ></script>
 </head>
 
 
 <body>
 
-  <div class="app-shell">
+  <div class="app-container">
 
 
-    <!-- ===================================================
-         HEADER
-         =================================================== -->
+    <!-- =====================================================
+         HOME PAGE
+         ===================================================== -->
 
-    <header class="top-header">
+    <section
+      id="homePage"
+      class="page"
+    >
 
-      <div class="brand-mark">
-        INSET
-      </div>
+      <div class="home-card">
 
-      <div class="brand-text">
+        <div class="page-header">
 
-        <div class="brand-title">
-          INSET 2026
-        </div>
-
-        <div class="brand-subtitle">
-          Attendance System
-        </div>
-
-      </div>
-
-    </header>
-
-
-    <main class="app-main">
-
-
-      <!-- =================================================
-           HOME
-           ================================================= -->
-
-      <section
-        id="homePage"
-        class="page active"
-      >
-
-        <div class="hero-card">
-
-          <div class="hero-icon">
-            ✓
+          <div class="page-icon">
+            📋
           </div>
 
-          <div class="eyebrow">
-            IN-SERVICE TRAINING
+          <div class="event-info">
+
+            <div class="event-title">
+              INSET 2026
+            </div>
+
+            <div class="event-date">
+              September 9–11, 2026
+            </div>
+
+            <div class="event-theme">
+              Strategies that Work: Enhancing Literacy
+              and Numeracy through Pedagogical Shifts
+            </div>
+
           </div>
+
+        </div>
+
+
+        <div class="home-content">
 
           <h1>
-            INSET 2026
+            Attendance System
           </h1>
 
-          <p class="hero-title">
-            Attendance System
+          <p>
+            Scan the official attendance QR code
+            to record your attendance.
           </p>
-
-          <p class="event-date">
-            September 9–11, 2026
-          </p>
-
-          <p class="hero-description">
-            Scan the official QR code to record your attendance.
-          </p>
-
-        </div>
-
-
-        <div class="action-stack">
 
 
           <!-- SCAN -->
 
           <button
-            class="action-button primary"
             type="button"
+            class="main-button scan-button"
             onclick="startAttendance()"
           >
-
-            <span class="button-icon">
-              📷
-            </span>
-
-            <span>
-
-              <strong>
-                SCAN QR CODE
-              </strong>
-
-              <small>
-                Time-in / Time-out
-              </small>
-
-            </span>
-
+            📷 SCAN QR CODE
           </button>
 
 
           <!-- REGISTER -->
 
           <button
-            class="action-button secondary"
             type="button"
+            class="main-button register-button"
             onclick="openRegistration()"
           >
-
-            <span class="button-icon">
-              📝
-            </span>
-
-            <span>
-
-              <strong>
-                REGISTER
-              </strong>
-
-              <small>
-                Register your attendance account
-              </small>
-
-            </span>
-
+            📝 REGISTER
           </button>
 
 
           <!-- ADMIN -->
 
           <button
-            class="action-button admin"
             type="button"
-            onclick="showAdminLogin()"
+            class="main-button admin-button"
+            onclick="openAdminLogin()"
           >
-
-            <span class="button-icon">
-              🔐
-            </span>
-
-            <span>
-
-              <strong>
-                ADMIN
-              </strong>
-
-              <small>
-                QR generation and monitoring
-              </small>
-
-            </span>
-
-          </button>
-
-
-        </div>
-
-
-        <div class="info-strip">
-
-          <span>
-            📅 September 9–11, 2026
-          </span>
-
-          <span>
-            •
-          </span>
-
-          <span>
-            📍 DJFANHS
-          </span>
-
-        </div>
-
-      </section>
-
-
-
-      <!-- =================================================
-           USER IDENTIFICATION / SELECTION
-           ================================================= -->
-
-      <section
-        id="identifyPage"
-        class="page"
-      >
-
-        <div class="card form-card">
-
-          <div class="section-icon">
-            👥
-          </div>
-
-
-          <h2 class="user-selection-title">
-            Who Are You?
-          </h2>
-
-
-          <p class="user-selection-description">
-            Select the registered user who will record attendance on this phone.
-          </p>
-
-
-          <!--
-            JavaScript will place the registered users here.
-          -->
-
-          <div
-            id="registeredUsers"
-            class="registered-users"
-          >
-          </div>
-
-
-          <div
-            id="identifyMessage"
-            class="registration-note"
-          >
-          </div>
-
-
-          <button
-            class="link-button"
-            type="button"
-            onclick="showHome()"
-          >
-            ← Back to Home
+            🔐 ADMIN
           </button>
 
         </div>
 
-      </section>
+      </div>
+
+    </section>
 
 
+    <!-- =====================================================
+         IDENTIFY / SELECT USER PAGE
+         ===================================================== -->
 
-      <!-- =================================================
-           REGISTRATION
-           ================================================= -->
+    <section
+      id="identifyPage"
+      class="page"
+      style="display:none;"
+    >
 
-      <section
-        id="registrationPage"
-        class="page"
-      >
+      <div class="form-card">
 
-        <div class="card form-card">
+        <div class="page-header">
 
-          <div class="section-icon">
-            📝
-          </div>
-
-
-          <h2>
-            Participant Registration
-          </h2>
-
-
-          <p
-            id="registrationNote"
-            class="registration-note"
-          >
-            Enter your details to register for INSET 2026.
-          </p>
-
-
-          <form
-            onsubmit="registerUser(event)"
-          >
-
-
-            <div class="form-row">
-
-
-              <div class="field">
-
-                <label for="firstName">
-                  First Name
-                  <span>*</span>
-                </label>
-
-                <input
-                  id="firstName"
-                  type="text"
-                  autocomplete="given-name"
-                  required
-                >
-
-              </div>
-
-
-              <div class="field">
-
-                <label for="middleName">
-                  Middle Name
-                </label>
-
-                <input
-                  id="middleName"
-                  type="text"
-                  autocomplete="additional-name"
-                >
-
-              </div>
-
-
-            </div>
-
-
-            <div class="field">
-
-              <label for="lastName">
-                Last Name
-                <span>*</span>
-              </label>
-
-              <input
-                id="lastName"
-                type="text"
-                autocomplete="family-name"
-                required
-              >
-
-            </div>
-
-
-            <div class="field">
-
-              <label for="registrationLicense">
-                License No.
-                <span>*</span>
-              </label>
-
-              <input
-                id="registrationLicense"
-                type="text"
-                autocomplete="off"
-                required
-              >
-
-            </div>
-
-
-            <button
-              class="primary-button"
-              type="submit"
-            >
-              REGISTER PARTICIPANT
-            </button>
-
-
-          </form>
-
-
-          <button
-            class="link-button"
-            type="button"
-            onclick="showHome()"
-          >
-            ← Back to Home
-          </button>
-
-
-        </div>
-
-      </section>
-
-
-
-      <!-- =================================================
-           SCANNER
-           ================================================= -->
-
-      <section
-        id="scannerPage"
-        class="page scanner-page"
-      >
-
-
-        <div class="scanner-header">
-
-          <div>
-
-            <div class="eyebrow">
-              ATTENDANCE SCANNER
-            </div>
-
-            <h2>
-              Scan QR Code
-            </h2>
-
-          </div>
-
-
-          <div class="live-badge">
-            LIVE
-          </div>
-
-        </div>
-
-
-
-        <!--
-          Selected user confirmation
-        -->
-
-        <div
-          id="selectedUserConfirmation"
-          class="card form-card"
-          style="display:none;"
-        >
-
-          <div class="section-icon">
+          <div class="page-icon">
             👤
           </div>
 
+          <div class="event-info">
 
-          <div class="eyebrow">
-            ATTENDANCE FOR
-          </div>
+            <div class="event-title">
+              SELECT PARTICIPANT
+            </div>
 
-
-          <div
-            id="selectedUserDetails"
-            class="selected-user-details"
-          >
-          </div>
-
-
-          <p class="confirmation-note">
-            Please make sure this is the correct person before scanning.
-          </p>
-
-
-          <button
-            class="primary-button"
-            type="button"
-            onclick="startAttendanceScanner()"
-          >
-            📷 SCAN QR CODE
-          </button>
-
-
-          <button
-            class="link-button"
-            type="button"
-            onclick="cancelSelectedUser()"
-          >
-            ← Choose Another User
-          </button>
-
-        </div>
-
-
-
-        <!--
-          Actual scanner
-        -->
-
-        <div
-          id="attendanceScanner"
-          class="scanner-card"
-          style="display:none;"
-        >
-
-          <div
-            id="activeAttendanceUser"
-            class="active-attendance-user"
-          >
-          </div>
-
-
-          <div class="scanner-frame">
-
-            <div
-              id="reader"
-              class="reader"
-            >
+            <div class="event-date">
+              INSET 2026
             </div>
 
           </div>
 
+        </div>
+
+
+        <div class="form-content">
+
+          <h2>
+            Who is attending?
+          </h2>
+
+          <p>
+            Select the registered participant
+            who will record attendance.
+          </p>
+
+
+          <div
+            id="registeredUsersList"
+            class="registered-users-list"
+          >
+          </div>
+
+
+          <button
+            type="button"
+            class="secondary-button"
+            onclick="returnHome()"
+          >
+            ← BACK
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         REGISTRATION PAGE
+         ===================================================== -->
+
+    <section
+      id="registrationPage"
+      class="page"
+      style="display:none;"
+    >
+
+      <div class="form-card">
+
+        <div class="page-header">
+
+          <div class="page-icon">
+            📝
+          </div>
+
+          <div class="event-info">
+
+            <div class="event-title">
+              REGISTRATION
+            </div>
+
+            <div class="event-date">
+              INSET 2026
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="form-content">
+
+          <h2>
+            Register Participant
+          </h2>
 
           <p
+            id="registrationNote"
+          >
+            Register your details on this device.
+          </p>
+
+
+          <!-- FIRST NAME -->
+
+          <div class="form-group">
+
+            <label
+              for="firstName"
+            >
+              FIRST NAME
+            </label>
+
+            <input
+              type="text"
+              id="firstName"
+              name="firstName"
+              placeholder="Enter first name"
+              autocomplete="off"
+            >
+
+          </div>
+
+
+          <!-- MIDDLE NAME -->
+
+          <div class="form-group">
+
+            <label
+              for="middleName"
+            >
+              MIDDLE NAME
+            </label>
+
+            <input
+              type="text"
+              id="middleName"
+              name="middleName"
+              placeholder="Enter middle name"
+              autocomplete="off"
+            >
+
+          </div>
+
+
+          <!-- LAST NAME -->
+
+          <div class="form-group">
+
+            <label
+              for="lastName"
+            >
+              LAST NAME
+            </label>
+
+            <input
+              type="text"
+              id="lastName"
+              name="lastName"
+              placeholder="Enter last name"
+              autocomplete="off"
+            >
+
+          </div>
+
+
+          <!-- LICENSE -->
+
+          <div class="form-group">
+
+            <label
+              for="registrationLicense"
+            >
+              LICENSE NO.
+            </label>
+
+            <input
+              type="text"
+              id="registrationLicense"
+              name="registrationLicense"
+              placeholder="Enter License No."
+              autocomplete="off"
+              autocapitalize="characters"
+            >
+
+          </div>
+
+
+          <!-- REGISTER -->
+
+          <button
+            type="button"
+            class="main-button register-button"
+            onclick="submitRegistration()"
+          >
+            📝 REGISTER PARTICIPANT
+          </button>
+
+
+          <!-- BACK -->
+
+          <button
+            type="button"
+            class="secondary-button"
+            onclick="returnHome()"
+          >
+            ← BACK
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         SCANNER PAGE
+         ===================================================== -->
+
+    <section
+      id="scannerPage"
+      class="page"
+      style="display:none;"
+    >
+
+      <div class="scanner-card">
+
+        <div class="page-header">
+
+          <div class="page-icon">
+            📷
+          </div>
+
+          <div class="event-info">
+
+            <div class="event-title">
+              SCAN ATTENDANCE QR
+            </div>
+
+            <div class="event-date">
+              INSET 2026
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="scanner-content">
+
+          <div
             id="scannerStatus"
             class="scanner-status"
           >
-            Requesting camera access...
+            Starting camera...
+          </div>
+
+
+          <!-- CAMERA READER -->
+
+          <div
+            id="reader"
+            class="reader"
+          >
+          </div>
+
+
+          <p class="scanner-instruction">
+            Point your camera at the official
+            attendance QR code.
           </p>
 
+
+          <button
+            type="button"
+            class="secondary-button"
+            onclick="stopScanner(); returnHome();"
+          >
+            ✕ CANCEL
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         SUCCESS PAGE
+         ===================================================== -->
+
+    <section
+      id="successPage"
+      class="page"
+      style="display:none;"
+    >
+
+      <div class="result-card success-card">
+
+        <div class="result-icon">
+          ✅
+        </div>
+
+
+        <h1>
+          Attendance Recorded
+        </h1>
+
+
+        <p
+          id="successMessage"
+        >
+          Attendance recorded successfully.
+        </p>
+
+
+        <div
+          id="successDetails"
+          class="success-details"
+        >
         </div>
 
 
         <button
-          class="stop-scanner-button"
           type="button"
-          onclick="showHome()"
+          class="main-button scan-button"
+          onclick="returnHome()"
         >
-          Cancel / Back to Home
+          🏠 DONE
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         ERROR PAGE
+         ===================================================== -->
+
+    <section
+      id="errorPage"
+      class="page"
+      style="display:none;"
+    >
+
+      <div class="result-card error-card">
+
+        <div class="result-icon">
+          ❌
+        </div>
+
+
+        <h1>
+          Attendance Not Recorded
+        </h1>
+
+
+        <p
+          id="errorMessage"
+        >
+          Something went wrong.
+        </p>
+
+
+        <button
+          type="button"
+          class="main-button scan-button"
+          onclick="startAttendance()"
+        >
+          🔄 TRY AGAIN
         </button>
 
 
-      </section>
-
-
-
-      <!-- =================================================
-           SUCCESS
-           ================================================= -->
-
-      <section
-        id="successPage"
-        class="page"
-      >
-
-        <div
-          class="card result-card success-card"
+        <button
+          type="button"
+          class="secondary-button"
+          onclick="returnHome()"
         >
+          🏠 HOME
+        </button>
 
-          <div class="result-icon success-icon">
-            ✓
-          </div>
+      </div>
 
-
-          <div class="eyebrow">
-            ATTENDANCE RECORDED
-          </div>
+    </section>
 
 
-          <h2>
-            Success!
-          </h2>
+    <!-- =====================================================
+         ADMIN LOGIN PAGE
+         ===================================================== -->
 
+    <section
+      id="adminLoginPage"
+      class="page"
+      style="display:none;"
+    >
 
-          <div
-            id="successDetails"
-            class="result-details"
-          >
-          </div>
+      <div class="form-card admin-login-card">
 
+        <div class="page-header">
 
-          <button
-            class="primary-button"
-            type="button"
-            onclick="showHome()"
-          >
-            DONE
-          </button>
-
-        </div>
-
-      </section>
-
-
-
-      <!-- =================================================
-           ERROR
-           ================================================= -->
-
-      <section
-        id="errorPage"
-        class="page"
-      >
-
-        <div
-          class="card result-card error-card"
-        >
-
-          <div class="result-icon error-icon">
-            !
-          </div>
-
-
-          <div class="eyebrow">
-            ATTENDANCE SYSTEM
-          </div>
-
-
-          <h2>
-            Unable to Continue
-          </h2>
-
-
-          <p
-            id="errorMessage"
-            class="error-message"
-          >
-          </p>
-
-
-          <button
-            class="primary-button"
-            type="button"
-            onclick="showHome()"
-          >
-            BACK TO HOME
-          </button>
-
-        </div>
-
-      </section>
-
-
-
-      <!-- =================================================
-           ADMIN LOGIN
-           ================================================= -->
-
-      <section
-        id="adminLoginPage"
-        class="page"
-      >
-
-        <div
-          class="card form-card narrow-card"
-        >
-
-          <div class="section-icon">
+          <div class="page-icon">
             🔐
           </div>
 
+          <div class="event-info">
+
+            <div class="event-title">
+              ADMINISTRATOR
+            </div>
+
+            <div class="event-date">
+              INSET 2026
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="form-content">
 
           <h2>
             Administrator Login
           </h2>
 
-
           <p>
-            Enter the administrator password.
+            Enter the administrator password
+            to access the attendance controls.
           </p>
 
 
-          <form
-            onsubmit="adminLogin(event)"
-          >
+          <div class="form-group">
 
-            <label for="adminPassword">
-              Password
+            <label
+              for="adminPassword"
+            >
+              ADMIN PASSWORD
             </label>
 
-
             <input
-              id="adminPassword"
               type="password"
-              autocomplete="current-password"
-              required
+              id="adminPassword"
+              name="adminPassword"
+              placeholder="Enter admin password"
+              autocomplete="off"
             >
 
-
-            <button
-              class="primary-button"
-              type="submit"
-            >
-              LOGIN
-            </button>
-
-          </form>
+          </div>
 
 
           <button
-            class="link-button"
             type="button"
-            onclick="showHome()"
+            class="main-button admin-button"
+            onclick="adminLogin()"
           >
-            ← Back to Home
+            🔓 LOGIN
           </button>
 
 
+          <button
+            type="button"
+            class="secondary-button"
+            onclick="returnHome()"
+          >
+            ← BACK
+          </button>
+
         </div>
 
-      </section>
+      </div>
+
+    </section>
 
 
+    <!-- =====================================================
+         ADMIN PAGE
+         ===================================================== -->
 
-      <!-- =================================================
-           ADMIN PAGE
-           ================================================= -->
+    <section
+      id="adminPage"
+      class="page"
+      style="display:none;"
+    >
 
-      <section
-        id="adminPage"
-        class="page"
-      >
+      <div class="admin-card">
 
+        <div class="page-header">
 
-        <div class="admin-header">
+          <div class="page-icon">
+            ⚙️
+          </div>
 
-          <div>
+          <div class="event-info">
 
-            <div class="eyebrow">
-              ADMINISTRATOR
+            <div class="event-title">
+              ADMIN CONTROL PANEL
             </div>
 
-            <h2>
-              QR Attendance Control
-            </h2>
+            <div class="event-date">
+              INSET 2026
+            </div>
 
           </div>
-
-
-          <button
-            class="small-button"
-            type="button"
-            onclick="showHome()"
-          >
-            HOME
-          </button>
 
         </div>
 
 
+        <!-- =================================================
+             QR GENERATOR
+             ================================================= -->
 
-        <div class="card admin-card">
+        <div class="admin-section">
+
+          <h2>
+            Attendance QR Codes
+          </h2>
+
+          <p>
+            Generate the secure QR code for
+            each attendance session.
+          </p>
 
 
-          <div class="field">
+          <!-- Hidden date field used by app.js -->
 
-            <label for="attendanceDate">
-              Attendance Date
-            </label>
-
-
-            <input
-              id="attendanceDate"
-              type="date"
-              min="2026-09-09"
-              max="2026-09-11"
-            >
-
-          </div>
-
+          <input
+            type="hidden"
+            id="attendanceDate"
+            value="2026-09-09"
+          >
 
 
           <div class="admin-actions">
 
 
+            <!-- DAY 1 -->
+
             <button
-              class="qr-button time-in"
               type="button"
-              onclick="generateQR('TIME-IN')"
+              class="main-button primary-button qr-download-button"
+              onclick="selectQRDay('2026-09-09'); generateQR('TIME-IN');"
             >
-
-              <span>
-                🟢
-              </span>
-
-              GENERATE TIME-IN QR
-
+              DAY 1 — TIME IN
+              <small>
+                September 9, 2026
+              </small>
             </button>
 
 
             <button
-              class="qr-button time-out"
               type="button"
-              onclick="generateQR('TIME-OUT')"
+              class="main-button primary-button qr-download-button"
+              onclick="selectQRDay('2026-09-09'); generateQR('TIME-OUT');"
             >
-
-              <span>
-                🔴
-              </span>
-
-              GENERATE TIME-OUT QR
-
+              DAY 1 — TIME OUT
+              <small>
+                September 9, 2026
+              </small>
             </button>
 
 
+            <!-- DAY 2 -->
+
+            <button
+              type="button"
+              class="main-button primary-button qr-download-button"
+              onclick="selectQRDay('2026-09-10'); generateQR('TIME-IN');"
+            >
+              DAY 2 — TIME IN
+              <small>
+                September 10, 2026
+              </small>
+            </button>
+
+
+            <button
+              type="button"
+              class="main-button primary-button qr-download-button"
+              onclick="selectQRDay('2026-09-10'); generateQR('TIME-OUT');"
+            >
+              DAY 2 — TIME OUT
+              <small>
+                September 10, 2026
+              </small>
+            </button>
+
+
+            <!-- DAY 3 -->
+
+            <button
+              type="button"
+              class="main-button primary-button qr-download-button"
+              onclick="selectQRDay('2026-09-11'); generateQR('TIME-IN');"
+            >
+              DAY 3 — TIME IN
+              <small>
+                September 11, 2026
+              </small>
+            </button>
+
+
+            <button
+              type="button"
+              class="main-button primary-button qr-download-button"
+              onclick="selectQRDay('2026-09-11'); generateQR('TIME-OUT');"
+            >
+              DAY 3 — TIME OUT
+              <small>
+                September 11, 2026
+              </small>
+            </button>
+
           </div>
 
 
+          <!-- =================================================
+               GENERATED QR STATUS
+               ================================================= -->
 
-          <div class="qr-output">
-
-            <div
-              id="qrContainer"
-              class="qr-container"
-            >
-            </div>
-
-
-            <div
-              id="qrStatus"
-              class="qr-status"
-            >
-            </div>
-
+          <div
+            id="qrStatus"
+            class="qr-status"
+          >
+            Select a day and attendance mode
+            to generate a QR code.
           </div>
 
 
+          <!-- =================================================
+               QR DISPLAY
+               ================================================= -->
+
+          <div
+            id="qrContainer"
+            class="qr-container"
+          >
+          </div>
+
+
+          <!-- =================================================
+               DOWNLOAD CURRENT QR
+               ================================================= -->
 
           <button
-            class="secondary-button"
             type="button"
-            onclick="clearQR()"
+            id="downloadQrButton"
+            class="main-button register-button qr-download-button"
+            onclick="downloadCurrentQR()"
+            disabled
           >
-            CLEAR QR
+            ⬇️ DOWNLOAD CURRENT QR
           </button>
 
+
+          <!-- =================================================
+               DOWNLOAD ALL 6 A4 PDF
+               ================================================= -->
+
+          <button
+            type="button"
+            class="main-button admin-button"
+            onclick="downloadAllQRCodesPDF()"
+          >
+            📄 DOWNLOAD ALL 6 QR CODES — A4 PDF
+          </button>
+
+
+          <!-- CLEAR -->
+
+          <button
+            type="button"
+            class="secondary-button"
+            onclick="clearQR()"
+          >
+            🗑️ CLEAR QR
+          </button>
 
         </div>
 
 
-      </section>
+        <!-- =================================================
+             ATTENDANCE SUMMARY
+             ================================================= -->
+
+        <div class="admin-section">
+
+          <h2>
+            Attendance Summary
+          </h2>
 
 
-    </main>
+          <button
+            type="button"
+            class="main-button primary-button"
+            onclick="loadAttendanceSummary()"
+          >
+            🔄 REFRESH ATTENDANCE
+          </button>
 
 
+          <div
+            id="attendanceSummary"
+            class="attendance-summary"
+          >
+            Loading attendance summary...
+          </div>
 
-    <!-- ===================================================
-         FOOTER
-         =================================================== -->
+        </div>
 
-    <footer class="app-footer">
 
-      <div>
-        INSET 2026 Attendance System
+        <!-- =================================================
+             ADMIN LOGOUT
+             ================================================= -->
+
+        <button
+          type="button"
+          class="secondary-button"
+          onclick="logoutAdmin()"
+        >
+          🔒 LOG OUT
+        </button>
+
       </div>
 
-      <div>
-        Don Juan F. Avalon National High School
-      </div>
-
-    </footer>
+    </section>
 
 
-  </div>
+    <!-- =====================================================
+         LOADING OVERLAY
+         ===================================================== -->
 
+    <div
+      id="loadingOverlay"
+      class="loading-overlay"
+      style="display:none;"
+    >
 
+      <div class="loading-box">
 
-  <!-- =====================================================
-       LOADING OVERLAY
-       ===================================================== -->
+        <div class="loading-spinner"></div>
 
-  <div
-    id="loading"
-    class="loading-overlay hidden"
-  >
+        <div
+          id="loadingMessage"
+          class="loading-message"
+        >
+          Please wait...
+        </div>
 
-    <div class="loading-box">
-
-      <div class="spinner">
-      </div>
-
-      <div>
-        Processing...
       </div>
 
     </div>
 
+
   </div>
 
 
+  <!-- =======================================================
+       SMALL COMPATIBILITY STYLES
+       These only ensure the new functional elements are
+       readable even if the existing style.css has no rules
+       for them.
+       ======================================================= -->
 
-  <!-- =====================================================
-       APP SCRIPT
-       ===================================================== -->
+  <style>
 
-  <script
-    src="app.js"
-  ></script>
+    .page {
+      width: 100%;
+    }
 
+    .form-content,
+    .home-content,
+    .scanner-content {
+      width: 100%;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 7px;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: .4px;
+    }
+
+    .form-group input {
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 48px;
+      padding: 12px 14px;
+      border: 1px solid #d5dde7;
+      border-radius: 10px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: #0b2d52;
+      box-shadow: 0 0 0 3px rgba(11,45,82,.10);
+    }
+
+    .secondary-button {
+      width: 100%;
+      min-height: 46px;
+      margin-top: 12px;
+      border: 1px solid #cfd8e3;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #172033;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 10px 14px;
+    }
+
+    .secondary-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .registered-users-list {
+      width: 100%;
+      margin: 20px 0;
+    }
+
+    .user-selection-heading {
+      margin-bottom: 18px;
+    }
+
+    .user-selection-heading h2 {
+      margin-bottom: 5px;
+    }
+
+    .registered-user-button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid #d6dee8;
+      background: #ffffff;
+      border-radius: 13px;
+      padding: 15px;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+
+    .registered-user-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 5px 15px rgba(0,0,0,.08);
+    }
+
+    .registered-user-name {
+      display: block;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .registered-user-license {
+      display: block;
+      font-size: 13px;
+      opacity: .75;
+    }
+
+    .scanner-status {
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto 15px;
+      overflow: hidden;
+      border-radius: 15px;
+    }
+
+    .scanner-instruction {
+      text-align: center;
+      margin: 12px 0 20px;
+    }
+
+    .success-details {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+      background: #f4f7fb;
+      line-height: 1.8;
+    }
+
+    .admin-section {
+      margin-top: 25px;
+      margin-bottom: 25px;
+    }
+
+    .admin-section h2 {
+      margin-bottom: 8px;
+    }
+
+    .admin-section > p {
+      margin-bottom: 15px;
+    }
+
+    .admin-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .admin-actions button {
+      margin: 0;
+    }
+
+    .admin-actions small {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      opacity: .75;
+    }
+
+    .qr-container {
+      min-height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+      margin: 15px 0;
+    }
+
+    .qr-container canvas,
+    .qr-container img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .attendance-summary {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+
+    .attendance-summary-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .attendance-summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 650px;
+    }
+
+    .attendance-summary-table th,
+    .attendance-summary-table td {
+      padding: 9px 7px;
+      border-bottom: 1px solid #e0e6ed;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .attendance-summary-table th {
+      font-weight: 700;
+      background: #f4f7fb;
+    }
+
+    .loading-box {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 25px;
+      min-width: 220px;
+      text-align: center;
+      box-shadow: 0 15px 40px rgba(0,0,0,.20);
+    }
+
+    .loading-spinner {
+      width: 36px;
+      height: 36px;
+      border: 4px solid #dbe3ec;
+      border-top-color: #0b2d52;
+      border-radius: 50%;
+      margin: 0 auto 15px;
+      animation: insetSpin .8s linear infinite;
+    }
+
+    .loading-message {
+      font-weight: 600;
+    }
+
+    @keyframes insetSpin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (max-width: 600px) {
+
+      .admin-section {
+        margin-top: 20px;
+      }
+
+      .qr-container {
+        padding: 10px;
+      }
+
+      .qr-container canvas,
+      .qr-container img {
+        max-width: 100%;
+      }
+
+    }
+
+  </style>
 
 </body>
-
 </html>
