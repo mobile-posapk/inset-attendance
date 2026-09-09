@@ -8,18 +8,12 @@
    GOOGLE APPS SCRIPT API
    ========================================================= */
 
-/*
- * WE WILL PUT YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
- * AFTER WE CREATE THE BACKEND.
- *
- * DO NOT CHANGE THIS YET.
- */
-
-const API_URL = "https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9emBZvJ_wsEi1CqABGV5-g0jIcZ0Ji7TqNOccygIlIflF3w/exec";
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbxtBRiR3XOLpidV5aaL0Im9emBZvJ_wsEi1CqABGV5-g0jIcZ0Ji7TqNOccygIlIflF3w/exec";
 
 
 /* =========================================================
-   GLOBAL VARIABLESS
+   GLOBAL VARIABLES
    ========================================================= */
 
 let scanner = null;
@@ -51,6 +45,9 @@ const EVENT_END =
 const LICENSE_STORAGE_KEY =
   "inset_license";
 
+const PENDING_QR_TOKEN_KEY =
+  "inset_pending_qr_token";
+
 
 /* =========================================================
    PAGE MANAGEMENT
@@ -61,29 +58,19 @@ function showPage(pageId) {
   const pages =
     document.querySelectorAll(".page");
 
+  pages.forEach(function(page) {
 
-  pages.forEach(
-    function(page) {
+    page.classList.remove("active");
 
-      page.classList.remove(
-        "active"
-      );
-
-    }
-  );
+  });
 
 
   const target =
-    document.getElementById(
-      pageId
-    );
-
+    document.getElementById(pageId);
 
   if (target) {
 
-    target.classList.add(
-      "active"
-    );
+    target.classList.add("active");
 
   }
 
@@ -100,9 +87,15 @@ function showHome() {
 
   currentParticipant = null;
 
-  showPage(
-    "homePage"
+  /*
+   * A pending QR should not remain when the user
+   * intentionally returns to the Home page.
+   */
+  localStorage.removeItem(
+    PENDING_QR_TOKEN_KEY
   );
+
+  showPage("homePage");
 
 }
 
@@ -111,179 +104,141 @@ function showHome() {
    START ATTENDANCE
    ========================================================= */
 
-/* =========================================================
-   START ATTENDANCE
-   ========================================================= */
+/*
+ * NEW FLOW:
+ *
+ * HOME
+ *   ↓
+ * SCAN QR
+ *   ↓
+ * If registered:
+ *      record attendance
+ *
+ * If not registered:
+ *      save QR token
+ *      open registration
+ *      after registration automatically
+ *      record the saved QR token
+ */
 
 function startAttendance() {
 
-  const savedLicense =
-    localStorage.getItem(
-      LICENSE_STORAGE_KEY
-    );
+  stopScanner();
 
+  currentParticipant = null;
 
   /*
-   * =====================================================
-   * NO SAVED LICENSE
-   * =====================================================
+   * Starting a completely new scan should not use
+   * an abandoned QR token from an old registration.
    */
+  localStorage.removeItem(
+    PENDING_QR_TOKEN_KEY
+  );
 
-  if (!savedLicense) {
+  startScanner();
 
-    currentParticipant = null;
+}
 
-    document.getElementById(
-      "identifyLicense"
-    ).value = "";
 
-    showPage(
-      "identifyPage"
-    );
+/* =========================================================
+   OPEN REGISTRATION
+   ========================================================= */
 
-    return;
+function openRegistration() {
+
+  stopScanner();
+
+  currentParticipant = null;
+
+  /*
+   * Direct registration is a new registration process.
+   *
+   * If registration was triggered by a QR scan,
+   * processQRCode() will NOT call this function.
+   * It will directly show registrationPage while
+   * preserving the pending QR token.
+   */
+  localStorage.removeItem(
+    PENDING_QR_TOKEN_KEY
+  );
+
+
+  const firstName =
+    document.getElementById("firstName");
+
+  const middleName =
+    document.getElementById("middleName");
+
+  const lastName =
+    document.getElementById("lastName");
+
+  const license =
+    document.getElementById("registrationLicense");
+
+  const note =
+    document.getElementById("registrationNote");
+
+
+  if (firstName) {
+    firstName.value = "";
+  }
+
+  if (middleName) {
+    middleName.value = "";
+  }
+
+  if (lastName) {
+    lastName.value = "";
+  }
+
+  if (license) {
+    license.value = "";
+  }
+
+  if (note) {
+
+    note.textContent =
+      "Please enter your information to register.";
+
   }
 
 
-  /*
-   * =====================================================
-   * VERIFY SAVED LICENSE AGAINST DATABASE
-   *
-   * This prevents a deleted participant from
-   * continuing to use the old saved login.
-   * =====================================================
-   */
-
-  showLoading(true);
-
-
-  apiCall(
-    "verifyParticipant",
-    {
-      licenseNo:
-        savedLicense
-    }
-  )
-
-  .then(
-    function(result) {
-
-      showLoading(false);
-
-
-      /*
-       * =================================================
-       * LICENSE STILL EXISTS
-       * =================================================
-       */
-
-      if (
-        result &&
-        result.success &&
-        result.found &&
-        result.participant
-      ) {
-
-        currentParticipant =
-          result.participant;
-
-        /*
-         * Refresh the saved License No.
-         * using the value returned by
-         * the database.
-         */
-
-        localStorage.setItem(
-          LICENSE_STORAGE_KEY,
-          result.participant.licenseNo
-        );
-
-
-        /*
-         * Continue normally.
-         */
-
-        startScanner();
-
-        return;
-      }
-
-
-      /*
-       * =================================================
-       * LICENSE NO. WAS DELETED / NOT FOUND
-       * =================================================
-       *
-       * Clear the old saved login.
-       */
-
-      localStorage.removeItem(
-        LICENSE_STORAGE_KEY
-      );
-
-
-      currentParticipant = null;
-
-
-      /*
-       * Clear identification field.
-       */
-
-      document.getElementById(
-        "identifyLicense"
-      ).value = "";
-
-
-      /*
-       * Start again from identification.
-       */
-
-      showPage(
-        "identifyPage"
-      );
-
-    }
-  )
-
-  .catch(
-    function(error) {
-
-      showLoading(false);
-
-
-      /*
-       * IMPORTANT:
-       *
-       * If the server is temporarily unavailable,
-       * DO NOT erase the saved License No.
-       *
-       * This prevents someone from being forced
-       * to register again just because of a
-       * temporary internet/server problem.
-       */
-
-      showError(
-        error.message ||
-        "Unable to verify your License No. Please try again."
-      );
-
-    }
-  );
+  showPage("registrationPage");
 
 }
+
+
 /* =========================================================
    IDENTIFY PARTICIPANT
+   LEGACY COMPATIBILITY
    ========================================================= */
+
+/*
+ * This function is kept so older HTML does not break.
+ *
+ * The new Home flow does NOT use this function.
+ */
 
 function identifyUser(event) {
 
   event.preventDefault();
 
+  const field =
+    document.getElementById("identifyLicense");
+
+  if (!field) {
+
+    showError(
+      "Identification form is not available."
+    );
+
+    return;
+
+  }
+
 
   const license =
-    document.getElementById(
-      "identifyLicense"
-    ).value
+    field.value
       .trim()
       .toUpperCase();
 
@@ -299,9 +254,7 @@ function identifyUser(event) {
   }
 
 
-  showLoading(
-    true
-  );
+  showLoading(true);
 
 
   apiCall(
@@ -311,71 +264,64 @@ function identifyUser(event) {
     }
   )
 
-  .then(
-    function(result) {
+  .then(function(result) {
 
-      showLoading(
-        false
+    showLoading(false);
+
+
+    if (
+      result &&
+      result.success &&
+      result.participant
+    ) {
+
+      currentParticipant =
+        result.participant;
+
+
+      localStorage.setItem(
+        LICENSE_STORAGE_KEY,
+        result.participant.licenseNo
       );
 
 
-      if (
-        result &&
-        result.success &&
-        result.found
-      ) {
+      startScanner();
 
-        currentParticipant =
-          result.participant;
-
-
-        localStorage.setItem(
-          LICENSE_STORAGE_KEY,
-          result.participant.licenseNo
-        );
-
-
-        startScanner();
-
-      }
-
-      else {
-
-        /*
-         * Participant not found.
-         * Show registration page.
-         */
-
-        document.getElementById(
-          "registrationLicense"
-        ).value =
-          license;
-
-
-        showPage(
-          "registrationPage"
-        );
-
-      }
+      return;
 
     }
-  )
 
-  .catch(
-    function(error) {
 
-      showLoading(
-        false
+    /*
+     * Participant not found.
+     */
+    const registrationLicense =
+      document.getElementById(
+        "registrationLicense"
       );
 
+    if (registrationLicense) {
 
-      showError(
-        error.message ||
-        "Unable to connect to the attendance server."
-      );
+      registrationLicense.value =
+        license;
 
     }
-  );
+
+
+    showPage("registrationPage");
+
+  })
+
+  .catch(function(error) {
+
+    showLoading(false);
+
+    showError(
+      error.message ||
+      "Unable to connect to the attendance server."
+    );
+
+  });
 
 }
 
@@ -436,89 +382,153 @@ function registerUser(event) {
   }
 
 
-  showLoading(
-    true
-  );
+  showLoading(true);
 
 
   apiCall(
     "registerParticipant",
     {
-
-      firstName:
-        firstName,
-
-      middleName:
-        middleName,
-
-      lastName:
-        lastName,
-
-      licenseNo:
-        licenseNo
-
+      firstName: firstName,
+      middleName: middleName,
+      lastName: lastName,
+      licenseNo: licenseNo
     }
   )
 
-  .then(
-    function(result) {
+  .then(function(result) {
 
-      showLoading(
-        false
-      );
+    showLoading(false);
 
 
+    if (
+      !result ||
+      !result.success
+    ) {
+
+      /*
+       * If the license is already registered,
+       * use the existing participant.
+       */
       if (
-        !result ||
-        !result.success
+        result &&
+        result.alreadyRegistered &&
+        result.participant
       ) {
 
-        throw new Error(
-          result &&
-          result.message
-            ? result.message
-            : "Registration failed."
+        currentParticipant =
+          result.participant;
+
+        localStorage.setItem(
+          LICENSE_STORAGE_KEY,
+          result.participant.licenseNo
         );
+
+        /*
+         * If a pending QR exists, record it.
+         */
+        const pendingToken =
+          localStorage.getItem(
+            PENDING_QR_TOKEN_KEY
+          );
+
+        if (pendingToken) {
+
+          localStorage.removeItem(
+            PENDING_QR_TOKEN_KEY
+          );
+
+          recordAttendanceWithToken(
+            pendingToken,
+            result.participant.licenseNo
+          );
+
+          return;
+
+        }
+
+        startScanner();
+
+        return;
 
       }
 
 
-      currentParticipant =
-        result.participant;
+      throw new Error(
+        result && result.message
+          ? result.message
+          : "Registration failed."
+      );
+
+    }
 
 
-      localStorage.setItem(
-        LICENSE_STORAGE_KEY,
-        result.participant.licenseNo
+    /*
+     * Registration successful.
+     */
+    currentParticipant =
+      result.participant;
+
+
+    localStorage.setItem(
+      LICENSE_STORAGE_KEY,
+      result.participant.licenseNo
+    );
+
+
+    /*
+     * Check if registration was triggered
+     * by a QR scan.
+     */
+    const pendingToken =
+      localStorage.getItem(
+        PENDING_QR_TOKEN_KEY
+      );
+
+
+    if (pendingToken) {
+
+      /*
+       * Remove it BEFORE recording so that
+       * accidental repeated submissions do
+       * not reuse the same pending token.
+       */
+      localStorage.removeItem(
+        PENDING_QR_TOKEN_KEY
       );
 
 
       /*
-       * Registration complete.
-       *
-       * Now open the scanner.
+       * Automatically record the QR that was
+       * scanned before registration.
        */
-
-      startScanner();
-
-    }
-  )
-
-  .catch(
-    function(error) {
-
-      showLoading(
-        false
+      recordAttendanceWithToken(
+        pendingToken,
+        result.participant.licenseNo
       );
 
-
-      showError(
-        error.message ||
-        "Unable to register participant."
-      );
+      return;
 
     }
-  );
+
+
+    /*
+     * Direct registration:
+     * registration is complete, so now open scanner.
+     */
+    startScanner();
+
+  })
+
+  .catch(function(error) {
+
+    showLoading(false);
+
+    showError(
+      error.message ||
+      "Unable to register participant."
+    );
+
+  });
 
 }
 
@@ -530,19 +540,15 @@ function registerUser(event) {
 function startScanner() {
 
   /*
-   * Stop previous scanner.
+   * Stop any previous scanner first.
    */
-
   stopScanner();
 
 
-  showPage(
-    "scannerPage"
-  );
+  showPage("scannerPage");
 
 
-  scannerProcessing =
-    false;
+  scannerProcessing = false;
 
 
   const reader =
@@ -557,6 +563,17 @@ function startScanner() {
     );
 
 
+  if (!reader || !status) {
+
+    showError(
+      "Scanner interface is missing."
+    );
+
+    return;
+
+  }
+
+
   reader.innerHTML = "";
 
 
@@ -565,9 +582,8 @@ function startScanner() {
 
 
   /*
-   * Make sure library exists.
+   * Make sure Html5Qrcode library exists.
    */
-
   if (
     typeof Html5Qrcode ===
     "undefined"
@@ -581,10 +597,6 @@ function startScanner() {
   }
 
 
-  /*
-   * Create scanner.
-   */
-
   scanner =
     new Html5Qrcode(
       "reader"
@@ -592,226 +604,198 @@ function startScanner() {
 
 
   /*
-   * Detect available cameras.
+   * Detect cameras.
    */
-
   Html5Qrcode
     .getCameras()
 
-    .then(
-      function(cameras) {
+    .then(function(cameras) {
+
+      if (
+        !cameras ||
+        cameras.length === 0
+      ) {
+
+        throw new Error(
+          "No camera was detected on this device."
+        );
+
+      }
+
+
+      /*
+       * Prefer rear camera.
+       */
+      let cameraId =
+        cameras[0].id;
+
+
+      for (
+        let i = 0;
+        i < cameras.length;
+        i++
+      ) {
+
+        const label =
+          String(
+            cameras[i].label || ""
+          ).toLowerCase();
+
 
         if (
-          !cameras ||
-          cameras.length === 0
+          label.includes("back") ||
+          label.includes("rear") ||
+          label.includes("environment")
         ) {
 
-          throw new Error(
-            "No camera was detected on this device."
-          );
+          cameraId =
+            cameras[i].id;
+
+          break;
 
         }
 
-
-        /*
-         * Select rear camera if available.
-         */
-
-        let cameraId =
-          cameras[0].id;
+      }
 
 
-        for (
-          let i = 0;
-          i < cameras.length;
-          i++
-        ) {
-
-          const label =
-            String(
-              cameras[i].label || ""
-            ).toLowerCase();
+      status.textContent =
+        "Starting camera...";
 
 
-          if (
+      return scanner.start(
 
-            label.includes("back") ||
+        cameraId,
 
-            label.includes("rear") ||
+        {
+          fps: 10,
 
-            label.includes("environment")
-
-          ) {
-
-            cameraId =
-              cameras[i].id;
-
-            break;
-
-          }
-
-        }
-
-
-        status.textContent =
-          "Starting camera...";
-
-
-        return scanner.start(
-
-          cameraId,
-
-          {
-
-            fps: 10,
-
-            qrbox:
-              function(
-                viewfinderWidth,
-                viewfinderHeight
-              ) {
-
-                const minSize =
-                  Math.min(
-                    viewfinderWidth,
-                    viewfinderHeight
-                  );
-
-
-                const size =
-                  Math.floor(
-                    minSize * 0.70
-                  );
-
-
-                return {
-
-                  width:
-                    size,
-
-                  height:
-                    size
-
-                };
-
-              },
-
-            aspectRatio:
-              1.0
-
-          },
-
-
-          function(decodedText) {
-
-            if (
-              scannerProcessing
+          qrbox:
+            function(
+              viewfinderWidth,
+              viewfinderHeight
             ) {
 
-              return;
-
-            }
-
-
-            scannerProcessing =
-              true;
+              const minSize =
+                Math.min(
+                  viewfinderWidth,
+                  viewfinderHeight
+                );
 
 
-            status.textContent =
-              "QR code detected. Processing...";
+              const size =
+                Math.floor(
+                  minSize * 0.70
+                );
 
 
-            processQRCode(
-              decodedText
-            );
+              return {
+                width: size,
+                height: size
+              };
 
-          },
+            },
+
+          aspectRatio: 1.0
+
+        },
 
 
-          function(errorMessage) {
+        function(decodedText) {
 
-            /*
-             * Normal scanning errors
-             * are ignored.
-             */
+          if (scannerProcessing) {
+
+            return;
 
           }
 
-        );
 
-      }
-    )
-
-    .then(
-      function() {
-
-        scannerRunning =
-          true;
+          scannerProcessing = true;
 
 
-        status.textContent =
-          "Camera ready — point it at the QR code.";
-
-      }
-    )
-
-    .catch(
-      function(error) {
-
-        console.error(
-          "CAMERA ERROR:",
-          error
-        );
+          status.textContent =
+            "QR code detected. Processing...";
 
 
-        scannerRunning =
-          false;
+          processQRCode(
+            decodedText
+          );
+
+        },
 
 
-        let message =
-          "Unable to start the camera.";
+        function(errorMessage) {
 
-
-        if (
-          error &&
-          error.message
-        ) {
-
-          message =
-            error.message;
+          /*
+           * Normal QR scanning errors
+           * are intentionally ignored.
+           */
 
         }
 
+      );
 
-        status.innerHTML =
+    })
 
-          "<strong>Camera could not be started.</strong>" +
+    .then(function() {
 
-          "<br><br>" +
-
-          message +
-
-          "<br><br>" +
-
-          "Please make sure camera permission is allowed, " +
-
-          "then refresh the page and try again.";
+      scannerRunning =
+        true;
 
 
-        try {
+      status.textContent =
+        "Camera ready — point it at the QR code.";
 
-          scanner.clear();
+    })
 
-        }
+    .catch(function(error) {
 
-        catch (e) {}
+      console.error(
+        "CAMERA ERROR:",
+        error
+      );
 
 
-        scanner =
-          null;
+      scannerRunning =
+        false;
+
+
+      let message =
+        "Unable to start the camera.";
+
+
+      if (
+        error &&
+        error.message
+      ) {
+
+        message =
+          error.message;
 
       }
-    );
+
+
+      status.innerHTML =
+        "<strong>Camera could not be started.</strong>" +
+        "<br><br>" +
+        escapeHTML(message) +
+        "<br><br>" +
+        "Please make sure camera permission is allowed, " +
+        "then refresh the page and try again.";
+
+
+      try {
+
+        scanner.clear();
+
+      }
+
+      catch (e) {}
+
+
+      scanner =
+        null;
+
+    });
 
 }
 
@@ -856,33 +840,29 @@ function stopScanner() {
     currentScanner
       .stop()
 
-      .then(
-        function() {
+      .then(function() {
 
-          try {
+        try {
 
-            currentScanner.clear();
-
-          }
-
-          catch (e) {}
+          currentScanner.clear();
 
         }
-      )
 
-      .catch(
-        function() {
+        catch (e) {}
 
-          try {
+      })
 
-            currentScanner.clear();
+      .catch(function() {
 
-          }
+        try {
 
-          catch (e) {}
+          currentScanner.clear();
 
         }
-      );
+
+        catch (e) {}
+
+      });
 
   }
 
@@ -902,44 +882,39 @@ function stopScanner() {
    PROCESS QR CODE
    ========================================================= */
 
+/*
+ * NEW LOGIC:
+ *
+ * The QR is scanned FIRST.
+ *
+ * If the participant already has a saved license:
+ *      → record attendance
+ *
+ * If there is NO saved license:
+ *      → save QR token
+ *      → open registration
+ *
+ * The user does NOT scan the QR again after registering.
+ */
+
 function processQRCode(qrText) {
 
   /*
-   * Participant must be identified.
+   * Extract token.
    */
-
-  if (
-    !currentParticipant ||
-    !currentParticipant.licenseNo
-  ) {
-
-    scannerProcessing = false;
-
-    showError(
-      "Participant identification is missing. Please start again."
-    );
-
-    return;
-  }
+  let token =
+    String(qrText || "").trim();
 
 
   /*
-   * Extract the token from the QR code.
+   * QR may contain:
    *
-   * The QR may contain either:
+   * https://.../?token=ABC
    *
-   * 1. A full URL:
-   *    https://.../?token=ABC123
+   * OR:
    *
-   * OR
-   *
-   * 2. A raw token:
-   *    ABC123
+   * ABC
    */
-
-  let token = qrText.trim();
-
-
   try {
 
     const scannedURL =
@@ -964,28 +939,27 @@ function processQRCode(qrText) {
   catch (error) {
 
     /*
-     * QR is not a URL.
-     * Treat the scanned text as
-     * the token itself.
+     * Not a URL.
+     * Use QR text as token.
      */
 
   }
 
 
   /*
-   * Make sure we actually have
-   * a token.
+   * Validate token.
    */
-
   if (!token) {
 
-    scannerProcessing = false;
+    scannerProcessing =
+      false;
 
     showError(
       "Invalid QR code. No attendance token was found."
     );
 
     return;
+
   }
 
 
@@ -1001,127 +975,243 @@ function processQRCode(qrText) {
   );
 
 
+  /*
+   * Check whether this device already has
+   * a registered License No.
+   */
+  const savedLicense =
+    localStorage.getItem(
+      LICENSE_STORAGE_KEY
+    );
+
+
+  /* =====================================================
+     NOT REGISTERED
+     ===================================================== */
+
+  if (!savedLicense) {
+
+    /*
+     * IMPORTANT:
+     * Save the QR token before opening registration.
+     */
+    localStorage.setItem(
+      PENDING_QR_TOKEN_KEY,
+      token
+    );
+
+
+    currentParticipant =
+      null;
+
+
+    stopScanner();
+
+
+    /*
+     * Clear old license field.
+     */
+    const registrationLicense =
+      document.getElementById(
+        "registrationLicense"
+      );
+
+
+    if (registrationLicense) {
+
+      registrationLicense.value =
+        "";
+
+    }
+
+
+    /*
+     * Tell participant what is happening.
+     */
+    const note =
+      document.getElementById(
+        "registrationNote"
+      );
+
+
+    if (note) {
+
+      note.textContent =
+        "QR code scanned. Complete registration and your attendance will be recorded automatically.";
+
+    }
+
+
+    showPage(
+      "registrationPage"
+    );
+
+
+    return;
+
+  }
+
+
+  /* =====================================================
+     REGISTERED PARTICIPANT
+     ===================================================== */
+
+  currentParticipant = {
+    licenseNo:
+      savedLicense
+  };
+
+
+  recordAttendanceWithToken(
+    token,
+    savedLicense
+  );
+
+}
+
+
+/* =========================================================
+   RECORD ATTENDANCE WITH TOKEN
+   ========================================================= */
+
+function recordAttendanceWithToken(
+  token,
+  licenseNo
+) {
+
   showLoading(true);
 
 
   apiCall(
     "recordAttendance",
     {
-
-      token:
-        token,
-
-      licenseNo:
-        currentParticipant.licenseNo
-
+      token: token,
+      licenseNo: licenseNo
     }
   )
 
-  .then(
-    function(result) {
+  .then(function(result) {
 
-      showLoading(false);
+    showLoading(false);
 
 
-      if (
-        !result ||
-        !result.success
-      ) {
+    /*
+     * Participant no longer exists in database.
+     */
+    if (
+      result &&
+      result.registrationRequired
+    ) {
 
-        throw new Error(
-          result &&
-          result.message
-            ? result.message
-            : "Attendance could not be recorded."
-        );
+      /*
+       * Clear invalid saved license.
+       */
+      localStorage.removeItem(
+        LICENSE_STORAGE_KEY
+      );
 
-      }
+
+      /*
+       * IMPORTANT:
+       * Keep the QR token because it was
+       * already scanned.
+       */
+      localStorage.setItem(
+        PENDING_QR_TOKEN_KEY,
+        token
+      );
+
+
+      currentParticipant =
+        null;
 
 
       stopScanner();
 
 
-      showSuccess(
-        result
-      );
-
-    }
-  )
-
-  .catch(
-  function(error) {
-
-    showLoading(false);
-
-    scannerProcessing = false;
-
-
-    /*
-     * =====================================================
-     * PARTICIPANT WAS DELETED FROM DATABASE
-     * =====================================================
-     *
-     * If the participant no longer exists in the
-     * database, clear the saved License No. and
-     * restart the identification process.
-     */
-
-    if (
-      error &&
-      error.message &&
-      error.message.toLowerCase().includes(
-        "participant not found"
-      )
-    ) {
-
-      localStorage.removeItem(
-        LICENSE_STORAGE_KEY
-      );
-
-      currentParticipant = null;
-
-
       /*
-       * Clear identification field.
+       * Pre-fill the old license so the user
+       * can see what was previously stored.
        */
-
-      const identifyLicense =
+      const registrationLicense =
         document.getElementById(
-          "identifyLicense"
+          "registrationLicense"
         );
 
-      if (identifyLicense) {
 
-        identifyLicense.value = "";
+      if (registrationLicense) {
+
+        registrationLicense.value =
+          licenseNo || "";
 
       }
 
 
-      /*
-       * Return to identification.
-       */
+      const note =
+        document.getElementById(
+          "registrationNote"
+        );
+
+
+      if (note) {
+
+        note.textContent =
+          "Your previous registration was not found. Please register again. Your scanned QR code will be recorded automatically after registration.";
+
+      }
+
 
       showPage(
-        "identifyPage"
+        "registrationPage"
       );
 
+
       return;
+
     }
 
 
     /*
-     * =====================================================
-     * OTHER ERRORS
-     * =====================================================
+     * Normal attendance success.
      */
+    if (
+      !result ||
+      !result.success
+    ) {
+
+      throw new Error(
+        result &&
+        result.message
+          ? result.message
+          : "Attendance could not be recorded."
+      );
+
+    }
+
+
+    stopScanner();
+
+
+    showSuccess(
+      result
+    );
+
+  })
+
+  .catch(function(error) {
+
+    showLoading(false);
+
+    scannerProcessing =
+      false;
+
 
     showError(
       error.message ||
       "Unable to record attendance."
     );
 
-  }
-);
+  });
 
 }
 
@@ -1144,51 +1234,76 @@ function showSuccess(
     result.participant || {};
 
 
-  details.innerHTML =
+  const fullName =
+    [
+      participant.firstName || "",
+      participant.middleName || "",
+      participant.lastName || ""
+    ]
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
 
-    "<strong>NAME</strong><br>" +
 
-    escapeHTML(
-      [
-        participant.firstName || "",
-        participant.middleName || "",
-        participant.lastName || ""
+  if (details) {
 
-      ]
-        .join(" ")
-        .replace(/\s+/g, " ")
-        .trim()
-    ) +
+    details.innerHTML =
 
-    "<br><br>" +
+      "<strong>NAME</strong><br>" +
 
-    "<strong>LICENSE NO.</strong><br>" +
+      escapeHTML(
+        fullName
+      ) +
 
-    escapeHTML(
-      participant.licenseNo || ""
-    ) +
+      "<br><br>" +
 
-    "<br><br>" +
+      "<strong>LICENSE NO.</strong><br>" +
 
-    "<strong>DATE</strong><br>" +
+      escapeHTML(
+        participant.licenseNo || ""
+      ) +
 
-    escapeHTML(
-      result.date || ""
-    ) +
+      "<br><br>" +
 
-    "<br><br>" +
+      "<strong>DATE</strong><br>" +
 
-    "<strong>" +
+      escapeHTML(
+        result.attendanceDate ||
+        result.date ||
+        ""
+      ) +
 
-    escapeHTML(
-      result.mode || "ATTENDANCE"
-    ) +
+      "<br><br>" +
 
-    "</strong><br>" +
+      "<strong>" +
 
-    escapeHTML(
-      result.time || ""
+      escapeHTML(
+        result.mode ||
+        "ATTENDANCE"
+      ) +
+
+      "</strong><br>" +
+
+      escapeHTML(
+        result.time || ""
+      );
+
+  }
+
+
+  const successMessage =
+    document.getElementById(
+      "successMessage"
     );
+
+
+  if (successMessage) {
+
+    successMessage.textContent =
+      result.message ||
+      "Attendance recorded successfully.";
+
+  }
 
 
   showPage(
@@ -1209,11 +1324,19 @@ function showError(
   stopScanner();
 
 
-  document.getElementById(
-    "errorMessage"
-  ).textContent =
-    message ||
-    "An unexpected error occurred.";
+  const errorMessage =
+    document.getElementById(
+      "errorMessage"
+    );
+
+
+  if (errorMessage) {
+
+    errorMessage.textContent =
+      message ||
+      "An unexpected error occurred.";
+
+  }
 
 
   showPage(
@@ -1227,11 +1350,19 @@ function showError(
    ADMIN LOGIN
    ========================================================= */
 
-function showAdminLogin() {
+function openAdminLogin() {
 
-  document.getElementById(
-    "adminPassword"
-  ).value = "";
+  const password =
+    document.getElementById(
+      "adminPassword"
+    );
+
+
+  if (password) {
+
+    password.value = "";
+
+  }
 
 
   showPage(
@@ -1240,6 +1371,20 @@ function showAdminLogin() {
 
 }
 
+
+/*
+ * Keep the old function name working too.
+ */
+function showAdminLogin() {
+
+  openAdminLogin();
+
+}
+
+
+/* =========================================================
+   ADMIN LOGIN SUBMIT
+   ========================================================= */
 
 function adminLogin(event) {
 
@@ -1259,70 +1404,59 @@ function adminLogin(event) {
   }
 
 
-  showLoading(
-    true
-  );
+  showLoading(true);
 
 
   apiCall(
     "checkAdminPassword",
     {
-      password:
-        password
+      password: password
     }
   )
 
-  .then(
-    function(result) {
+  .then(function(result) {
 
-      showLoading(
-        false
-      );
+    showLoading(false);
 
 
-      if (
-        !result ||
-        !result.success
-      ) {
+    if (
+      !result ||
+      !result.success
+    ) {
 
-        throw new Error(
-          result &&
-          result.message
-            ? result.message
-            : "Incorrect administrator password."
-        );
-
-      }
-
-
-      setAdminDefaults();
-
-
-      showPage(
-        "adminPage"
-      );
-
-
-      loadAdminSummary();
-
-    }
-  )
-
-  .catch(
-    function(error) {
-
-      showLoading(
-        false
-      );
-
-
-      showError(
-        error.message ||
-        "Administrator login failed."
+      throw new Error(
+        result &&
+        result.message
+          ? result.message
+          : "Incorrect administrator password."
       );
 
     }
-  );
+
+
+    setAdminDefaults();
+
+
+    showPage(
+      "adminPage"
+    );
+
+
+    loadAdminSummary();
+
+  })
+
+  .catch(function(error) {
+
+    showLoading(false);
+
+
+    showError(
+      error.message ||
+      "Administrator login failed."
+    );
+
+  });
 
 }
 
@@ -1339,11 +1473,8 @@ function setAdminDefaults() {
     );
 
 
-  /*
-   * Default attendance date.
-   */
-
   if (
+    dateInput &&
     !dateInput.value
   ) {
 
@@ -1352,7 +1483,10 @@ function setAdminDefaults() {
 
   }
 
-}/* =========================================================
+}
+
+
+/* =========================================================
    GENERATE QR
    ========================================================= */
 
@@ -1366,10 +1500,6 @@ function generateQR(
     ).value;
 
 
-  /*
-   * Validate date.
-   */
-
   if (!attendanceDate) {
 
     alert(
@@ -1381,71 +1511,59 @@ function generateQR(
   }
 
 
-  showLoading(
-    true
-  );
+  showLoading(true);
 
 
   apiCall(
     "generateQR",
     {
-
-      mode:
-        mode,
-
+      mode: mode,
       attendanceDate:
         attendanceDate
-
     }
   )
 
-  .then(
-    function(result) {
+  .then(function(result) {
 
-      showLoading(
-        false
-      );
+    showLoading(false);
 
 
-      if (
-        !result ||
-        !result.success
-      ) {
+    if (
+      !result ||
+      !result.success
+    ) {
 
-        throw new Error(
-          result &&
-          result.message
-            ? result.message
-            : "Unable to generate QR code."
-        );
-
-      }
-
-
-      displayQRCode(
-        result
+      throw new Error(
+        result &&
+        result.message
+          ? result.message
+          : "Unable to generate QR code."
       );
 
     }
-  )
-
-  .catch(
-    function(error) {
-
-      showLoading(
-        false
-      );
 
 
-      alert(
-        error.message ||
-        "Unable to generate QR code."
-      );
+    displayQRCode(
+      result
+    );
 
-    }
-  );
+  })
+
+  .catch(function(error) {
+
+    showLoading(false);
+
+
+    alert(
+      error.message ||
+      "Unable to generate QR code."
+    );
+
+  });
 
 }
+
+
 /* =========================================================
    DISPLAY QR CODE
    ========================================================= */
@@ -1466,17 +1584,39 @@ function displayQRCode(
     );
 
 
+  if (!container || !status) {
+
+    return;
+
+  }
+
+
   container.innerHTML =
     "";
 
-
-  status.textContent =
+  status.innerHTML =
     "";
 
 
   /*
-   * Load QRCode library.
+   * The backend returns qrUrl.
+   *
+   * For compatibility, also support url.
    */
+  const qrURL =
+    result.qrUrl ||
+    result.url;
+
+
+  if (!qrURL) {
+
+    status.textContent =
+      "QR URL was not returned by the server.";
+
+    return;
+
+  }
+
 
   loadQRCodeLibrary(
     function() {
@@ -1484,19 +1624,14 @@ function displayQRCode(
       new QRCode(
         container,
         {
+          text: qrURL,
 
-          text:
-            result.url,
+          width: 250,
 
-          width:
-            250,
-
-          height:
-            250,
+          height: 250,
 
           correctLevel:
             QRCode.CorrectLevel.H
-
         }
       );
 
@@ -1506,7 +1641,8 @@ function displayQRCode(
         "<strong>" +
 
         escapeHTML(
-          result.mode
+          result.mode ||
+          ""
         ) +
 
         "</strong><br>" +
@@ -1514,7 +1650,9 @@ function displayQRCode(
         "Attendance Date: " +
 
         escapeHTML(
-          result.date
+          result.attendanceDate ||
+          result.date ||
+          ""
         ) +
 
         "<br><br>" +
@@ -1523,7 +1661,7 @@ function displayQRCode(
 
         "<span id=\"qrCountdown\">" +
 
-        "1:00:00" +
+        "60:00" +
 
         "</span>";
 
@@ -1536,6 +1674,8 @@ function displayQRCode(
   );
 
 }
+
+
 /* =========================================================
    QR CODE LIBRARY
    ========================================================= */
@@ -1595,9 +1735,7 @@ function startQRCountdown(
   expiresAt
 ) {
 
-  if (
-    qrCountdownTimer
-  ) {
+  if (qrCountdownTimer) {
 
     clearInterval(
       qrCountdownTimer
@@ -1610,6 +1748,13 @@ function startQRCountdown(
     document.getElementById(
       "qrCountdown"
     );
+
+
+  if (!countdown) {
+
+    return;
+
+  }
 
 
   function updateCountdown() {
@@ -1632,6 +1777,10 @@ function startQRCountdown(
       clearInterval(
         qrCountdownTimer
       );
+
+
+      qrCountdownTimer =
+        null;
 
 
       return;
@@ -1686,13 +1835,12 @@ function startQRCountdown(
 
 function clearQR() {
 
-  if (
-    qrCountdownTimer
-  ) {
+  if (qrCountdownTimer) {
 
     clearInterval(
       qrCountdownTimer
     );
+
 
     qrCountdownTimer =
       null;
@@ -1712,12 +1860,20 @@ function clearQR() {
     );
 
 
-  container.innerHTML =
-    "";
+  if (container) {
+
+    container.innerHTML =
+      '<div class="qr-placeholder">QR CODE WILL APPEAR HERE</div>';
+
+  }
 
 
-  status.innerHTML =
-    "";
+  if (status) {
+
+    status.innerHTML =
+      "";
+
+  }
 
 }
 
@@ -1729,8 +1885,7 @@ function clearQR() {
 function loadAdminSummary() {
 
   /*
-   * Summary can be connected
-   * to the backend later.
+   * Summary can be connected to the backend later.
    */
 
 }
@@ -1778,55 +1933,42 @@ function apiCall(
       fetch(
         url,
         {
-
-          method:
-            "GET",
-
-          redirect:
-            "follow"
-
+          method: "GET",
+          redirect: "follow"
         }
       )
 
-      .then(
-        function(response) {
+      .then(function(response) {
 
-          if (
-            !response.ok
-          ) {
+        if (!response.ok) {
 
-            throw new Error(
-              "Server returned HTTP " +
-              response.status
-            );
-
-          }
-
-
-          return response.json();
-
-        }
-      )
-
-      .then(
-        function(result) {
-
-          resolve(
-            result
+          throw new Error(
+            "Server returned HTTP " +
+            response.status
           );
 
         }
-      )
 
-      .catch(
-        function(error) {
 
-          reject(
-            error
-          );
+        return response.json();
 
-        }
-      );
+      })
+
+      .then(function(result) {
+
+        resolve(
+          result
+        );
+
+      })
+
+      .catch(function(error) {
+
+        reject(
+          error
+        );
+
+      });
 
     }
   );
@@ -1844,23 +1986,28 @@ function showLoading(
 
   const loading =
     document.getElementById(
-      "loading"
+      "loadingOverlay"
     );
+
+
+  if (!loading) {
+
+    return;
+
+  }
 
 
   if (visible) {
 
-    loading.classList.remove(
-      "hidden"
-    );
+    loading.style.display =
+      "flex";
 
   }
 
   else {
 
-    loading.classList.add(
-      "hidden"
-    );
+    loading.style.display =
+      "none";
 
   }
 
