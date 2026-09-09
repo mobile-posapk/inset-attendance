@@ -1049,21 +1049,79 @@ function processQRCode(qrText) {
   )
 
   .catch(
-    function(error) {
+  function(error) {
 
-      showLoading(false);
+    showLoading(false);
+
+    scannerProcessing = false;
 
 
-      scannerProcessing = false;
+    /*
+     * =====================================================
+     * PARTICIPANT WAS DELETED FROM DATABASE
+     * =====================================================
+     *
+     * If the participant no longer exists in the
+     * database, clear the saved License No. and
+     * restart the identification process.
+     */
 
+    if (
+      error &&
+      error.message &&
+      error.message.toLowerCase().includes(
+        "participant not found"
+      )
+    ) {
 
-      showError(
-        error.message ||
-        "Unable to record attendance."
+      localStorage.removeItem(
+        LICENSE_STORAGE_KEY
       );
 
+      currentParticipant = null;
+
+
+      /*
+       * Clear identification field.
+       */
+
+      const identifyLicense =
+        document.getElementById(
+          "identifyLicense"
+        );
+
+      if (identifyLicense) {
+
+        identifyLicense.value = "";
+
+      }
+
+
+      /*
+       * Return to identification.
+       */
+
+      showPage(
+        "identifyPage"
+      );
+
+      return;
     }
-  );
+
+
+    /*
+     * =====================================================
+     * OTHER ERRORS
+     * =====================================================
+     */
+
+    showError(
+      error.message ||
+      "Unable to record attendance."
+    );
+
+  }
+);
 
 }
 
