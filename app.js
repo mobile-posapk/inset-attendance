@@ -752,223 +752,97 @@ function clearRegistrationForm() {
    USER SELECTION
    ========================================================= */
 
-function showUserSelection() {
+function showUserSelection(users) {
+  showPage("identifyPage");
 
-  stopScanner();
+  const container =
+    document.getElementById("registeredUsersList");
 
-  currentParticipant = null;
-  selectedUserIndex = null;
-
-  const list =
-    document.getElementById("registeredUsers");
-
-  if (!list) {
+  if (!container) {
     console.error(
-      "registeredUsers element was not found."
+      "registeredUsersList element was not found."
     );
     return;
   }
 
-  const users =
-    getRegisteredUsers();
+  container.innerHTML = "";
 
-  list.innerHTML = "";
+  const registeredUsers =
+    Array.isArray(users)
+      ? users
+      : getRegisteredUsers();
 
-  if (users.length === 0) {
+  if (!registeredUsers.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        No registered participants found.
+      </div>
+    `;
+    return;
+  }
 
-    list.innerHTML = `
-      <div class="no-users-message">
-        <strong>No registered users</strong>
-        <p>Please register first.</p>
+  registeredUsers.forEach(function(user, index) {
+
+    const fullName =
+      buildFullName(user);
+
+    const license =
+      String(
+        user.licenseNo || ""
+      ).trim();
+
+    const maskedLicense =
+      license.length > 4
+        ? "****" + license.slice(-4)
+        : license;
+
+    const button =
+      document.createElement("button");
+
+    button.type = "button";
+    button.className =
+      "registered-user-button";
+
+    button.innerHTML = `
+      <div class="registered-user-name">
+        ${escapeHtml(fullName)}
+      </div>
+
+      <div class="registered-user-license">
+        PRC License No.:
+        ${escapeHtml(maskedLicense)}
       </div>
     `;
 
-    showPage("identifyPage");
-    return;
-  }
-
-  users.forEach(function(user, index) {
-
-    const wrapper =
-      document.createElement("div");
-
-    wrapper.style.display = "flex";
-    wrapper.style.gap = "8px";
-    wrapper.style.marginBottom = "10px";
-    wrapper.style.alignItems = "stretch";
-
-    /* =====================================================
-       SELECT USER BUTTON
-       ===================================================== */
-
-    const selectButton =
-      document.createElement("button");
-
-    selectButton.type = "button";
-
-    selectButton.className =
-      "registered-user-option";
-
-    selectButton.style.flex = "1";
-
-    selectButton.innerHTML = `
-      <span class="user-radio">
-        ○
-      </span>
-
-      <span class="registered-user-info">
-
-        <strong class="registered-user-name">
-          ${escapeHtml(
-  getParticipantFullName(user)
-)}
-        </strong>
-
-        <small class="registered-user-license">
-          License No.
-          ${escapeHtml(
-  maskLicense(user.licenseNo)
-)}
-        </small>
-
-      </span>
-    `;
-
-    selectButton.addEventListener(
+    button.addEventListener(
       "click",
-      function(event) {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        console.log(
-          "Selected registered user:",
-          user
-        );
-
+      function() {
         chooseRegisteredUser(index);
-
       }
     );
 
-
-    /* =====================================================
-       REMOVE USER BUTTON
-       ===================================================== */
-
-    const removeButton =
-      document.createElement("button");
-
-    removeButton.type = "button";
-
-    removeButton.textContent =
-      "REMOVE";
-
-    removeButton.style.width = "90px";
-    removeButton.style.minWidth = "90px";
-    removeButton.style.border = "none";
-    removeButton.style.borderRadius = "12px";
-    removeButton.style.background = "#dc3545";
-    removeButton.style.color = "#ffffff";
-    removeButton.style.fontWeight = "700";
-    removeButton.style.cursor = "pointer";
-
-    removeButton.addEventListener(
-      "click",
-      function(event) {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        const name =
-          getParticipantFullName(user);
-
-        const confirmed =
-          window.confirm(
-            "REMOVE THIS ACCOUNT FROM THIS DEVICE?\n\n" +
-            name +
-            "\n\n" +
-            "This will NOT delete the participant " +
-            "or attendance records from the school database."
-          );
-
-        if (!confirmed) {
-          return;
-        }
-
-        removeRegisteredUser(
-          user.licenseNo
-        );
-
-        currentParticipant = null;
-        selectedUserIndex = null;
-
-        showUserSelection();
-
-      }
-    );
-
-
-    /* =====================================================
-       ADD BUTTONS TO USER ROW
-       ===================================================== */
-
-    wrapper.appendChild(
-      selectButton
-    );
-
-    wrapper.appendChild(
-      removeButton
-    );
-
-    list.appendChild(
-      wrapper
-    );
-
+    container.appendChild(button);
   });
-
-
-  /* =======================================================
-     REGISTER ANOTHER USER
-     ======================================================= */
 
   const registerButton =
     document.createElement("button");
 
   registerButton.type = "button";
-
   registerButton.className =
     "secondary-button";
 
   registerButton.textContent =
-    "➕ Register Another User";
+    "REGISTER ANOTHER PARTICIPANT";
 
   registerButton.addEventListener(
     "click",
-    function(event) {
-
-      event.preventDefault();
-
-      openRegistration();
-
+    function() {
+      openRegistration("PRC ACCREDITATION");
     }
   );
 
-  list.appendChild(
-    registerButton
-  );
-
-
-  /* =======================================================
-     SHOW USER SELECTION PAGE
-     ======================================================= */
-
-  showPage(
-    "identifyPage"
-  );
-
-}
-function chooseRegisteredUser(index) {
+  container.appendChild(registerButton);
+}function chooseRegisteredUser(index) {
 
   const users = getRegisteredUsers();
 
